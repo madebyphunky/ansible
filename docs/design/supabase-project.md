@@ -1,7 +1,24 @@
-# Supabase Roles: first-version design
+# Hosted Supabase support: feature specification
+
+Feature specification: [#13](https://github.com/madebyphunky/ansible/issues/13).
 
 This records the grill-with-docs decisions and the user's instruction to implement
 remaining details by following the Supabase CLI.
+
+## Feature boundary
+
+The feature is the complete hosted Supabase support delivered by PR #12:
+Project provisioning, Auth configuration, database migrations, Collection packaging,
+prerequisite composition, example playbooks, documentation, and verification.
+Live acceptance is a verification concern within this feature, not a separate
+feature. The agreed Role interfaces and behaviour below remain the starting point
+for this documentation review.
+
+Follow the same delivery and verification pattern as the Gandi and Vercel features:
+credential-free PR checks, a protected manually triggered live Molecule scenario,
+and a successful real-provider acceptance run including verified cleanup before
+readiness. Document local and protected-CI evidence separately. A manual checklist
+or simulated CLI test does not satisfy the live gate.
 
 ## Scope and composition
 
@@ -69,13 +86,58 @@ remaining details by following the Supabase CLI.
   CLI migration versions, not checksums of already-applied files.
 - Do not modify or link the application checkout.
 
-## Verification
+## Acceptance criteria
 
+These criteria apply to the entire feature, not just individual Role task files.
+
+### Public behaviour and delivery
+
+- Build and install the independently packaged Collection with declared sibling
+  dependencies through the repository tooling.
+- Provide argument specifications, defaults, documented credentials/results,
+  installation instructions, and a thin example composing all three public Roles.
+- Support the repository's Ansible Core 2.18/2.19 matrix and supported macOS and
+  Ubuntu/Debian prerequisite paths; reuse the existing Node.js setup Role.
+- Exercise installed public Roles as the primary test seam. Prove validation,
+  explicit organization/project identity, supplied-password handling, omission
+  preservation, idempotency, failure reporting, and unchanged application files.
 - Check mode validates local inputs and reports inspection limitations without
   executing the CLI, downloading packages, installing prerequisites, or mutating
   the provider. Remote change reporting is a conservative plan.
-- Installed public-Role tests exercise a stateful CLI boundary without credentials.
-- Live provider acceptance is separate and has not been run for this first version.
+- Ordinary PR checks remain credential-free and pass lint, formatting, packaging,
+  supported-version contracts, and the existing provider suites.
+
+### Live acceptance
+
+- Add a separate `supabase` Molecule scenario invoking the actual installed
+  `project`, `auth`, and `migrations` Roles against a disposable Supabase Organization.
+- Add a manually triggered GitHub Actions workflow using a protected environment
+  and explicit scoped credentials/configuration, following Gandi/Vercel. Do not
+  expose provider credentials to ordinary PR checks.
+- Verify creation, exact-identity adoption, readiness, repeat-run idempotency,
+  Auth changes and omitted-field preservation, pending migrations and history
+  conflicts, password redaction, no implicit password rotation, check-mode safety,
+  and preservation of unrelated resources and application/link state.
+- Use uniquely named disposable Projects. Persist a nonsecret recovery manifest
+  before creation, capture exact provider references including partial failures,
+  and verify ownership before cleanup. Never delete by name prefix or broad scope.
+- Cleanup is test-harness functionality, not a new destructive public Role feature.
+  Attempt cleanup on success and failure; confirm absence before removing the
+  manifest. Retain recovery information and upload it on workflow failure.
+- Add credential-free harness tests for ownership guards and cleanup/failure paths.
+- Record a successful live run, including final cleanup, CLI/runtime versions,
+  exercised cases, and limitations. Missing credentials, capacity, required Auth
+  fixtures, provider failures, or failed cleanup leave the gate pending.
+- Keep local evidence distinct from protected-CI evidence. No skipped run counts
+  as a successful live run.
+
+### Current gaps
+
+The public Roles, packaging, examples, documentation, and simulated CLI contract
+suite exist. The executable Supabase Molecule scenario, protected live workflow,
+cleanup harness/tests, and successful hosted acceptance evidence are missing.
+Supported-version CI failures must also be resolved before feature readiness.
+See `docs/supabase-verification.md` for the required acceptance procedure.
 
 ## CLI contract sources
 

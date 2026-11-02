@@ -1,4 +1,6 @@
-# Supabase first-version verification
+# Supabase feature verification
+
+Feature specification: [#13](https://github.com/madebyphunky/ansible/issues/13).
 
 Installed public-Role contract tests are in `tests/test_supabase_role.py`.
 The stateful CLI double uses official v3.0.0 JSON schemas and checks explicit
@@ -18,24 +20,77 @@ A credential-free smoke check against actual `supabase@latest` on 2026-11-02
 returned v3.0.0 and confirmed the `config diff` and `db push` command flags.
 This checks command availability, not hosted service behavior.
 
-Live acceptance has not been run. Before treating the Roles as live-ready:
+## Required live acceptance delivery
 
-1. Select an explicit disposable Supabase organization with appropriate capacity
-   and provide a scoped access token through the environment or protected variables.
-2. Create a uniquely named Project in an explicit region, supplying
-   `supabase_project_password` from a secret source. Capture its exact ref and verify
-   the password is absent from verbose output and all result facts.
+Follow the existing Gandi/Vercel pattern: a separate Molecule scenario and a
+manually triggered workflow backed by a protected GitHub Actions environment.
+These are acceptance requirements for the complete hosted Supabase feature.
+The Supabase scenario, workflow, and cleanup harness are not implemented yet.
+Live acceptance has not been run; the feature is not live-ready.
+
+The scenario must invoke the installed public Roles, observe real provider state,
+and include Molecule idempotence. Ordinary PR jobs remain credential-free. Reuse
+the prior scenarios' prepare/converge/idempotence/verify/cleanup structure; retry
+cleanup with `always()` in CI. Configure environment reviewers and trusted branches
+in repository settings as well as referencing the environment in workflow YAML.
+Use a provider concurrency group with cancellation disabled to avoid interrupting
+cleanup.
+
+The protected configuration must supply a scoped access token, an explicit
+disposable Organization and region, and a creation password from a secret source.
+The harness passes the password explicitly as `supabase_project_password` and uses
+it as `SUPABASE_DB_PASSWORD` for migrations. The project Role itself has no password
+environment fallback. Any SMTP/OAuth fixture needed to exercise a declared Auth
+secret must be configured explicitly; unavailable prerequisites leave acceptance
+pending rather than silently reducing the claimed coverage.
+
+## Required live cases
+
+1. Verify the selected Organization and capacity, allocate unique exact Project
+   names, prove initial absence, and persist a nonsecret ownership manifest before
+   creation. Keep it outside Molecule's ephemeral directory and refuse overwrite.
+2. Create a disposable Project in the explicit region with the supplied password.
+   Capture the exact project reference, verify readiness and returned identity,
+   and prove credentials are absent from verbose output and all result facts.
 3. Re-run the project Role and verify no additional Project or change is reported.
-4. Apply a site URL/redirect configuration, repeat without changes, and verify
-   omitted Auth fields remain unchanged. Exercise a declared SMTP/OAuth secret
-   against a provider configuration suitable for the disposable Project.
-5. Apply a versioned migration, rerun with zero changes, and test a history conflict.
-   Check that application files and CLI link state are unchanged.
-6. Supply a different `supabase_project_password` on a repeat project run and verify
-   the Project password remains unchanged. Migrations must still use the original
-   current password through `SUPABASE_DB_PASSWORD`.
-7. Clean up only the exact Project created for the test, using the provider's tools.
-   Deletion is deliberately outside these Roles.
+   Exercise existing-resource adoption with explicit reference and organization.
+4. Apply Auth site URL/redirect settings, repeat with zero changes, and observe
+   omitted-field preservation through provider reads. Exercise a declared Auth
+   secret using the configured disposable fixture; do not claim email delivery or
+   end-user OAuth login from a configuration-only test.
+5. Apply a versioned SQL migration, verify its database effect, repeat with zero
+   changes, and test a history conflict without automatic repair. Prove application
+   files and CLI link state remain unchanged.
+6. Supply a different `supabase_project_password` on a repeat project run and prove
+   the database password remains unchanged. Migrations must still connect using
+   the original current password through `SUPABASE_DB_PASSWORD`.
+7. Exercise check mode and confirm provider state remains unchanged. Verify an
+   unrelated sentinel resource/configuration remains untouched throughout.
+8. Clean up only exact test-created Project references. Verify Organization,
+   initial-absence proof, creation identity, and reference continuity before
+   deletion. Never delete a pre-existing, ambiguous, or mismatched resource.
+   Cleanup does not add deletion to the public Roles.
 
-Never put credentials, initial passwords, application secrets, or raw provider
-output into committed test evidence. A skipped live run does not count as passing.
+## Cleanup, failure, and evidence
+
+Capture exact identities after public Role calls, including partial failures. If
+creation is indeterminate, reconcile using the persisted pre-creation evidence
+and provider identity; fail closed when ownership cannot be established. A name
+match or prefix alone is not deletion authority.
+
+Attempt cleanup after both successful and failed tests. Remove the manifest only
+when provider absence is confirmed; otherwise retain it for safe recovery and
+upload the nonsecret manifest as a failure artifact. A lost runner cannot guarantee
+cleanup. Add credential-free harness tests proving rejection of pre-existing or
+mismatched identities, safe failure recovery, and manifest retention on cleanup
+failure.
+
+A successful live run including final cleanup is a readiness gate, following the
+previous provider features. Record dated versions, scope, cases, and limitations;
+distinguish local execution from protected-CI execution. Contract tests and CLI
+help/version smoke checks are separate evidence and do not satisfy this gate.
+Missing credentials, fixtures, capacity, provider failures, or unverified cleanup
+leave acceptance pending.
+
+Never commit credentials, passwords, application secrets, or raw provider output
+as test evidence. A skipped live run does not count as passing.
