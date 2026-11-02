@@ -1,0 +1,47 @@
+---
+- name: Validate zone and record list
+  ansible.builtin.assert:
+    that:
+      - gandi_livedns_zone is string
+      - gandi_livedns_zone | length > 0
+      - gandi_livedns_zone is match('(?i)^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$')
+      - "'..' not in gandi_livedns_zone"
+      - gandi_livedns_records is sequence
+      - gandi_livedns_records is not string
+      - gandi_livedns_records is not mapping
+      - gandi_livedns_records | length > 0
+    fail_msg: Supply one zone without a trailing dot and a nonempty records list.
+
+- name: Validate every declaration before changing DNS
+  ansible.builtin.include_tasks: validate.yml
+  loop: "{{ gandi_livedns_records }}"
+  loop_control:
+    loop_var: gandi_livedns_entry
+
+- name: Reject duplicate record identities including case aliases
+  ansible.builtin.assert:
+    that:
+      - >-
+        (gandi_livedns_records | map(attribute='name') | map('lower') |
+         zip(gandi_livedns_records | map(attribute='type')) | list | unique | length)
+        == (gandi_livedns_records | length)
+    fail_msg: Each name and type combination must be declared exactly once.
+
+- name: Require a Personal Access Token
+  ansible.builtin.assert:
+    that:
+      - _gandi_livedns_token is string
+      - _gandi_livedns_token | trim | length > 0
+    fail_msg: Supply gandi_livedns_personal_access_token or GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN.
+  vars:
+    _gandi_livedns_token: >-
+      {{ gandi_livedns_personal_access_token |
+         default(lookup('ansible.builtin.env', 'GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN')) }}
+  no_log: true
+
+# Separate inclusions stop the host before processing another entry after an API failure.
+- name: Apply record sets in declaration order
+  ansible.builtin.include_tasks: apply.yml
+  loop: "{{ gandi_livedns_records }}"
+  loop_control:
+    loop_var: gandi_livedns_entry

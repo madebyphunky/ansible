@@ -1,0 +1,11 @@
+---
+- name: Converge isolated LiveDNS records
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Load nonsecret run manifest
+      ansible.builtin.include_vars:
+        file: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/dns-run.json"
+    - name: Invoke the public Role
+      ansible.builtin.include_role:
+        name: madebyphunky.infra.dns_gandi_livedns

@@ -1,0 +1,13 @@
+---
+- name: Converge the complete explicitly owned record set
+  community.general.gandi_livedns:
+    domain: "{{ gandi_livedns_zone }}"
+    record: "{{ gandi_livedns_entry.name }}"
+    type: "{{ gandi_livedns_entry.type }}"
+    state: "{{ gandi_livedns_entry.state | default('present') }}"
+    ttl: "{{ gandi_livedns_entry.ttl | default(omit) if gandi_livedns_entry.state | default('present') == 'present' else omit }}"
+    values: "{{ gandi_livedns_entry['values'] | default(omit) if gandi_livedns_entry.state | default('present') == 'present' else omit }}"
+    personal_access_token: >-
+      {{ gandi_livedns_personal_access_token |
+         default(lookup('ansible.builtin.env', 'GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN')) }}
+  no_log: true

@@ -1,0 +1,31 @@
+---
+name: LiveDNS acceptance
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: livedns-acceptance
+  cancel-in-progress: false
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    environment: gandi-livedns-test
+    env:
+      GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN: ${{ secrets.GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN }}
+      GANDI_LIVEDNS_TEST_ZONE: ${{ vars.GANDI_LIVEDNS_TEST_ZONE }}
+      GANDI_LIVEDNS_TEST_NAME_SUFFIX: ${{ vars.GANDI_LIVEDNS_TEST_NAME_SUFFIX }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install development tools and Collection
+        run: |
+          python -m pip install -r requirements-dev.txt
+          ansible-galaxy collection install .
+      - name: Run live acceptance
+        run: molecule test -s live
+      - name: Retry exact-identity cleanup even after a failed test
+        if: always()
+        run: molecule cleanup -s live

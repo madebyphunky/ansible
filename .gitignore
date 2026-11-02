@@ -1,0 +1,12 @@
+# Local tooling and build products
+.venv/
+.cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.tar.gz
+artifacts/
+.env
+.env.*
+!.env.example
+.ansible/
