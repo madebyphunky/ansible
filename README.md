@@ -9,6 +9,7 @@ root contains shared tooling and documentation.
 | `madebyphunky.gandi` | `madebyphunky.gandi.livedns` | Converge explicitly owned Gandi LiveDNS record sets. |
 | `madebyphunky.vercel` | `madebyphunky.vercel.project` | Ensure a Vercel Project and optional GitHub repository/production deployment. |
 | `madebyphunky.github` | `madebyphunky.github.cli` | Ensure GitHub CLI is available. |
+| `madebyphunky.supabase` | `madebyphunky.supabase.project`, `.auth`, `.migrations` | Ensure hosted Projects, configure Auth, and apply SQL migrations through the CLI. |
 | `madebyphunky.nodejs` | `madebyphunky.nodejs.setup` | Ensure a compatible Node.js runtime, npm, and npx are available. |
 
 ## Install
@@ -47,6 +48,13 @@ names. The names are shared across provider Roles, matching their official CLIs.
 Explicit variables take precedence. Credentials are passed through process
 environments and redacted rather than included in command arguments.
 
+Supabase Roles use `SUPABASE_ACCESS_TOKEN`; migrations also use
+`SUPABASE_DB_PASSWORD`, with explicit variables overriding controller environment
+values. New Projects receive a generated initial password in the sensitive
+`supabase_project_initial_password` fact; capture it securely and change it afterward.
+See [Supabase credential handling](collections/supabase/README.md#credentials-and-initial-password)
+for the creation CLI process-argument tradeoff.
+
 Gandi uses `gandi_livedns_personal_access_token`, falling back to
 `GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN`. Never commit tokens, secret environment files,
 vault files containing credentials, or real credentials in examples.
@@ -74,3 +82,6 @@ See [Gandi live verification](docs/live-verification.md) and
 [Vercel live verification](docs/vercel-live-verification.md). Local acceptance
 passed for both on 2026-11-02, including verified cleanup. Missing credentials
 never count as a passing live run.
+
+Supabase first-version contracts use an isolated CLI double; live provider acceptance
+has not been run. See [Supabase verification](docs/supabase-verification.md).

@@ -35,3 +35,15 @@ _Avoid_: Deployment (when referring to the Project itself)
 **Deployment**:
 A published version of an application's source within a Vercel Project, associated with a deployment URL. A production Deployment is the version published for production use.
 _Avoid_: Project (when referring to a published version)
+
+**Supabase Project**:
+A hosted Supabase environment containing a Postgres database and associated backend services within a Supabase organization.
+_Avoid_: self-hosted stack, local development stack, database (when referring to the whole Project)
+
+**Supabase Organization**:
+The hosted Supabase account boundary containing Supabase Projects.
+_Avoid_: Project, team (when referring to the Supabase ownership boundary)
+
+**Project reference**:
+Supabase's stable identifier for a hosted Supabase Project, distinct from its display name.
+_Avoid_: project name (when selecting an exact existing Supabase Project)

@@ -1,0 +1,62 @@
+---
+- name: Validate and converge Supabase project
+  block:
+    - name: Validate inputs before installing prerequisites
+      madebyphunky.supabase.operation: &operation_parameters
+        operation: project
+        access_token: "{{ SUPABASE_ACCESS_TOKEN | default(lookup('ansible.builtin.env', 'SUPABASE_ACCESS_TOKEN')) }}"
+        project_ref: "{{ supabase_project_ref | default(omit) }}"
+        cli_version: "{{ supabase_cli_version }}"
+        npx_executable: "{{ nodejs_runtime.npx_path | default(supabase_npx_executable) if supabase_manage_prerequisites else supabase_npx_executable }}"
+        node_executable: "{{ nodejs_runtime.node_path | default(supabase_node_executable) if supabase_manage_prerequisites else supabase_node_executable }}"
+        timeout: "{{ supabase_timeout }}"
+        poll_interval: "{{ supabase_poll_interval }}"
+        organization: "{{ supabase_organization }}"
+        name: "{{ supabase_project_name }}"
+        region: "{{ supabase_region | default(omit) }}"
+      args:
+        validate_only: true
+      no_log: true
+      changed_when: false
+      register: _supabase_project_operation
+
+    - name: Ensure Node.js and npx are available
+      ansible.builtin.include_role:
+        name: madebyphunky.nodejs.setup
+      when: supabase_manage_prerequisites
+
+    - name: Converge hosted Supabase project
+      madebyphunky.supabase.operation: *operation_parameters
+      no_log: true
+      register: _supabase_project_operation
+
+    - name: Publish Supabase project result
+      ansible.builtin.set_fact:
+        supabase_project_result: "{{ _supabase_project_operation.result }}"
+
+    - name: Preserve the generated initial password as a sensitive fact
+      ansible.builtin.set_fact:
+        supabase_project_initial_password: "{{ _supabase_project_operation.initial_password | default('') }}"
+      no_log: true
+
+    - name: Explain how to handle the new initial database password
+      ansible.builtin.debug:
+        msg: >-
+          Capture supabase_project_initial_password securely using a no_log task,
+          then change the initial database password in Supabase and update consumers.
+      when: supabase_project_result.password_change_required | default(false)
+  rescue:
+    - name: Preserve partial Supabase project result
+      ansible.builtin.set_fact:
+        supabase_project_result: "{{ _supabase_project_operation.result | default({}) }}"
+
+    - name: Preserve the initial password after a partial creation failure
+      ansible.builtin.set_fact:
+        supabase_project_initial_password: "{{ _supabase_project_operation.initial_password | default('') }}"
+      no_log: true
+
+    - name: Report Supabase project failure
+      ansible.builtin.fail:
+        msg: >-
+          {{ _supabase_project_operation.msg |
+              default('Supabase prerequisite setup failed; see failing task') }}
