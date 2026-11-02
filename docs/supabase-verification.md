@@ -36,6 +36,10 @@ in repository settings as well as referencing the environment in workflow YAML.
 Use a provider concurrency group with cancellation disabled to avoid interrupting
 cleanup.
 
+Outside the live workflow, callers must serialize creation for the same
+Organization/name and subsequent writes to the same Project. V1 does not provide
+distributed locking or guarantee atomic creation across controllers.
+
 The protected configuration must supply a scoped access token, an explicit
 disposable Organization and region, and a creation password from a secret source.
 The harness passes the password explicitly as `supabase_project_password` and uses
@@ -89,6 +93,9 @@ A successful live run including final cleanup is a readiness gate, following the
 previous provider features. Record dated versions, scope, cases, and limitations;
 distinguish local execution from protected-CI execution. Contract tests and CLI
 help/version smoke checks are separate evidence and do not satisfy this gate.
+Identify the tested commit and actual resolved CLI version. Before readiness,
+rerun acceptance after relevant Role behaviour changes or a CLI upgrade so that
+the recorded evidence covers the version being delivered.
 Missing credentials, fixtures, capacity, provider failures, or unverified cleanup
 leave acceptance pending.
 

@@ -50,6 +50,10 @@ or simulated CLI test does not satisfy the live gate.
   supplied organization and name.
 - Without a reference, exact organization/name lookup reuses one match, creates on
   zero matches, and fails on multiple matches.
+- Callers serialize creation for the same Organization/name and subsequent writes
+  to the same Project. V1 provides no distributed lock or cross-controller atomic
+  creation guarantee; the live workflow's concurrency group protects only its own
+  test runs.
 - Creation requires a region. Supplied region mismatches fail on existing Projects.
 - Require an explicit `supabase_project_password` Role input when creating a new
   Project. There is no password generation or environment fallback for this input.
@@ -128,6 +132,9 @@ These criteria apply to the entire feature, not just individual Role task files.
 - Record a successful live run, including final cleanup, CLI/runtime versions,
   exercised cases, and limitations. Missing credentials, capacity, required Auth
   fixtures, provider failures, or failed cleanup leave the gate pending.
+- Identify the tested commit and resolved CLI version in live evidence. Before
+  readiness, rerun acceptance after relevant behaviour changes or a CLI upgrade;
+  evidence for older behaviour or a different CLI does not validate the delivery.
 - Keep local evidence distinct from protected-CI evidence. No skipped run counts
   as a successful live run.
 
@@ -137,6 +144,12 @@ The public Roles, packaging, examples, documentation, and simulated CLI contract
 suite exist. The executable Supabase Molecule scenario, protected live workflow,
 cleanup harness/tests, and successful hosted acceptance evidence are missing.
 Supported-version CI failures must also be resolved before feature readiness.
+The implementation review also requires exact Project-reference validation with
+realistic fixtures, staging files referenced by Auth email-template/notification
+`content_path` settings, and correcting compatibility documentation that promises
+incompatible responses are always detected before mutation. Some response failures
+can only be detected after a create/push, so partial-mutation reporting and recovery
+must remain explicit.
 See `docs/supabase-verification.md` for the required acceptance procedure.
 
 ## CLI contract sources
