@@ -33,6 +33,8 @@ def installed(tmp_path_factory):
             "install",
             str(archive),
             "--no-deps",
+            # CI already has this version installed for linting. Still populate the isolated path.
+            "--force",
             "-p",
             str(directory),
         ],
