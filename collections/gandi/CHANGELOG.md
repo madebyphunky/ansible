@@ -1,6 +1,7 @@
 # Changelog
 
-## 0.2.0
+## Unreleased
 
-- Rename the Collection and Role to `madebyphunky.gandi.livedns`.
-- Preserve all Gandi inputs and DNS behaviour; remove the old infra invocation.
+- Provide the `madebyphunky.gandi.livedns` Role for explicitly owned DNS record sets.
+- Validate declarations before mutation and support PAT authentication, check mode,
+  idempotency, and explicit whole-record-set deletion.

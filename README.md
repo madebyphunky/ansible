@@ -2,7 +2,7 @@
 
 Small reusable Roles that Agents run to maintain project infrastructure. This
 repository contains independently installable provider Collections; the repository
-root is no longer an Ansible Collection.
+root contains shared tooling and documentation.
 
 | Collection | Public Role | Purpose |
 | --- | --- | --- |
@@ -39,20 +39,6 @@ from its own source directory. See each Collection's README and Role argument
 specifications for inputs, runtime prerequisites, and execution examples. Thin
 example playbooks gather no unnecessary facts and default to localhost.
 
-## Migration from madebyphunky.infra
-
-Replace `madebyphunky.infra.dns_gandi_livedns` with
-`madebyphunky.gandi.livedns`, including the Collection example playbook invocation.
-The old Role is removed; there is no compatibility alias. Existing Gandi input
-variables, environment fallback, Managed-set ownership, and DNS behaviour are
-unchanged. Install `madebyphunky.gandi` and update consumer playbooks before running.
-An old locally installed `madebyphunky.infra` package is not automatically removed
-from your machine; the new distribution does not include it.
-
-The Gandi source moved to `collections/gandi`. Documentation, examples, CI, and
-live Molecule tests now use the new public name. See
-[the migration decision](docs/adr/0001-provider-scoped-collections.md).
-
 ## Credentials
 
 Vercel/GitHub Roles accept explicit Ansible variables named `VERCEL_TOKEN` and
@@ -61,7 +47,7 @@ names. The names are shared across provider Roles, matching their official CLIs.
 Explicit variables take precedence. Credentials are passed through process
 environments and redacted rather than included in command arguments.
 
-Gandi continues to use `gandi_livedns_personal_access_token`, falling back to
+Gandi uses `gandi_livedns_personal_access_token`, falling back to
 `GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN`. Never commit tokens, secret environment files,
 vault files containing credentials, or real credentials in examples.
 
@@ -85,6 +71,6 @@ redaction, idempotency, and stop-on-failure promises are observable.
 Live acceptance is separate and uses protected GitHub Actions environments,
 explicit test accounts, unique disposable resources, and exact-identity cleanup.
 See [Gandi live verification](docs/live-verification.md) and
-[Vercel live verification](docs/vercel-live-verification.md). Local Vercel/GitHub acceptance passed on 2026-11-02, including historical
-production reuse and exact-resource cleanup. The renamed Gandi Role also passed live acceptance and verified cleanup;
-its migration evidence is recorded separately. Missing credentials never count as a passing live run.
+[Vercel live verification](docs/vercel-live-verification.md). Local acceptance
+passed for both on 2026-11-02, including verified cleanup. Missing credentials
+never count as a passing live run.

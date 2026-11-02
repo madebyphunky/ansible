@@ -40,9 +40,4 @@ specification and defaults for the complete interface. See repository
 [live verification](https://github.com/madebyphunky/ansible/blob/main/docs/live-verification.md)
 for protected acceptance requirements and exact-identity cleanup.
 
-## Migration
-
-Replace `madebyphunky.infra.dns_gandi_livedns` with
-`madebyphunky.gandi.livedns` and install this Collection. There is no compatibility
-alias. Variables, PAT fallback, validation, idempotency, and DNS behaviour remain
-unchanged. Never commit real credentials, secret environment files, or vaulted PATs.
+Never commit real credentials, secret environment files, or vaulted PATs.

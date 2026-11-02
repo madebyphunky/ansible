@@ -16,8 +16,7 @@ implementation. See the provider-scoped Collections ADR for public naming.
   separately from npm's installation-prompt suppression.
 - Use `gh` for GitHub repository management and Git for Git operations. Vercel CLI
   API access may cover settings and commit-specific deployment operations.
-- Migrate Gandi to `madebyphunky.gandi.livedns` without a compatibility alias.
-  Update packaging, examples, tests, and CI; preserve Gandi inputs and behaviour.
+- `madebyphunky.gandi.livedns` manages explicit Gandi LiveDNS record sets.
 
 ## Credentials and resource identity
 

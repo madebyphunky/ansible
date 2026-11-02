@@ -1,5 +1,5 @@
 # Changelog
 
-## 0.2.0
+## Unreleased
 
 - Add the madebyphunky.nodejs Collection.

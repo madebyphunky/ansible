@@ -1,5 +1,5 @@
 # Changelog
 
-## 0.2.0
+## Unreleased
 
 - Add explicit Vercel Project provisioning and commit-specific production deployment.
