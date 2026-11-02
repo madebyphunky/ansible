@@ -14,32 +14,33 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.fixture(scope="session")
 def installed(tmp_path_factory):
     directory = tmp_path_factory.mktemp("installed")
-    subprocess.run(
-        [
-            "ansible-galaxy",
-            "collection",
-            "build",
-            str(ROOT),
-            "--output-path",
-            str(directory),
-        ],
-        check=True,
-    )
-    archive = next(directory.glob("*.tar.gz"))
-    subprocess.run(
-        [
-            "ansible-galaxy",
-            "collection",
-            "install",
-            str(archive),
-            "--no-deps",
-            # CI already has this version installed for linting. Still populate the isolated path.
-            "--force",
-            "-p",
-            str(directory),
-        ],
-        check=True,
-    )
+    # Force every package into the isolated path even if CI has the same version installed.
+    for name in ("nodejs", "github", "gandi", "vercel"):
+        subprocess.run(
+            [
+                "ansible-galaxy",
+                "collection",
+                "build",
+                str(ROOT / "collections" / name),
+                "--output-path",
+                str(directory),
+            ],
+            check=True,
+        )
+        archive = next(directory.glob(f"madebyphunky-{name}-*.tar.gz"))
+        subprocess.run(
+            [
+                "ansible-galaxy",
+                "collection",
+                "install",
+                str(archive),
+                "--no-deps",
+                "--force",
+                "-p",
+                str(directory),
+            ],
+            check=True,
+        )
     # Replace only the provider in an isolated test installation. The packaged Role stays intact.
     provider = (
         directory

@@ -1,6 +1,6 @@
 # LiveDNS acceptance
 
-The live Molecule scenario tests the installed public Role against actual Gandi
+The live Molecule scenario tests `madebyphunky.gandi.livedns` against actual Gandi
 LiveDNS. It uses API reads, so acceptance does not depend on recursive DNS caches.
 Use a dedicated test zone, never production. Use a PAT scoped as narrowly as Gandi
 permits for that zone, with permission to read and manage its LiveDNS records.
@@ -22,7 +22,7 @@ The readiness gate is a successful workflow run, not merely a successful PR job.
 
 ## Local run
 
-After installing the development dependencies and the Collection, supply the PAT
+After installing the development dependencies and the Gandi Collection, supply the PAT
 and test zone through environment variables and run:
 
 ```sh
@@ -81,3 +81,23 @@ mutation, explicit deletion, and failure-fixture cleanup. Final cleanup verified
 absence of all allocated RRsets, and an additional cleanup invocation succeeded.
 No PAT is recorded here or in the run manifest. Protected GitHub Actions acceptance
 still requires the documented environment configuration; this was a local run.
+
+## Provider Collection migration
+
+Install the Gandi Collection from its own root before running the scenario:
+
+```sh
+ansible-galaxy collection install ./collections/gandi --force
+```
+
+Invoke `madebyphunky.gandi.livedns` from playbooks. The previous
+`madebyphunky.infra.dns_gandi_livedns` invocation has been removed without an alias.
+The Gandi variable names, environment fallback, and all DNS behaviour are unchanged.
+The recorded local acceptance above predates this packaging-only rename; a new
+run is needed to record live evidence for the new installed Collection identity.
+
+Run manifests now default to `.cache/gandi-live/run.json`, outside Molecule's
+ephemeral directory, so pruning cannot discard failed-cleanup recovery identities.
+Override `GANDI_LIVEDNS_TEST_MANIFEST` for parallel local runs. The scenario resets
+Molecule's lifecycle state between complete tests so a previous prepared flag does
+not skip fixture creation on subsequent runs.

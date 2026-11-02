@@ -1,0 +1,14 @@
+---
+- name: Exercise public prerequisite Roles on a disposable host
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - role: madebyphunky.nodejs.setup
+    - role: madebyphunky.github.cli
+  tasks:
+    - name: Verify tools are available after provisioning
+      ansible.builtin.assert:
+        that:
+          - nodejs_runtime.available
+          - github_cli_result.available
+      when: not ansible_check_mode

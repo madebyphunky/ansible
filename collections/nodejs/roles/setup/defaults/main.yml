@@ -1,0 +1,8 @@
+---
+nodejs_node_executable: node
+nodejs_npm_executable: npm
+nodejs_npx_executable: npx
+nodejs_install: true
+# Current Active LTS, verified 2026-11-02. Keep these together when Node's schedule changes.
+nodejs_lts_major: 26
+nodejs_compatible_majors: [22, 24, 26]

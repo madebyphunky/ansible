@@ -1,6 +1,6 @@
-# dns_gandi_livedns
+# livedns
 
-Run `madebyphunky.infra.dns_gandi_livedns` to manage explicit Gandi LiveDNS RRsets
+Run `madebyphunky.gandi.livedns` to manage explicit Gandi LiveDNS RRsets
 in a zone already controlled by the caller. The Role uses
 `community.general.gandi_livedns`, not zone-wide HTTP replacement operations.
 
@@ -56,4 +56,4 @@ convergence reports no changes. API execution is redacted to protect the PAT;
 validation messages and task names provide context without disclosing it.
 
 See the [Collection guide](../../README.md) for installation and execution and
-[live verification](../../docs/live-verification.md) for acceptance requirements.
+[live verification](https://github.com/madebyphunky/ansible/blob/main/docs/live-verification.md) for acceptance requirements.

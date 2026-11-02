@@ -1,11 +1,11 @@
 ---
 namespace: madebyphunky
-name: infra
-version: 0.1.0
+name: gandi
+version: 0.2.0
 readme: README.md
 authors:
   - madebyphunky
-description: Small reusable infrastructure Roles for Agents to run.
+description: Explicitly owned Gandi LiveDNS record sets.
 license:
   - MIT
 tags:
@@ -17,14 +17,6 @@ issues: https://github.com/madebyphunky/ansible/issues
 dependencies:
   community.general: ">=9.0.0"
 build_ignore:
-  - .git
-  - .github
-  - .venv
   - .cache
   - .ansible
-  - .pytest_cache
-  - tests
-  - extensions/molecule
-  - requirements-dev.txt
-  - artifacts
   - '*.tar.gz'

@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: madebyphunky
+  description: Provide a reusable Node.js, npm, and npx runtime.
+  license: MIT
+  min_ansible_version: '2.18'
+dependencies: []

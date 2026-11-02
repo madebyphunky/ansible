@@ -9,7 +9,7 @@ A small, single-purpose, reusable Ansible unit with a stable variable interface,
 _Avoid_: module (unless meaning an Ansible module), playbook-as-logic, script
 
 **Collection**:
-The installable Ansible namespace that packages Roles for distribution (Galaxy-friendly), e.g. under `madebyphunky`.
+An independently installable Ansible namespace that packages Roles for distribution, such as `madebyphunky.vercel`.
 _Avoid_: monorepo of loose roles, playbook dump
 
 **Agent**:
@@ -25,5 +25,13 @@ The explicitly identified record sets a Role owns, each identified by zone, name
 _Avoid_: full-zone sync, wipe-and-replace, unmanaged delete
 
 **Personal Access Token (PAT)**:
-Gandi bearer credential for LiveDNS (`Authorization: Bearer …`). The only auth `dns_gandi_livedns` accepts.
+Gandi bearer credential for LiveDNS (`Authorization: Bearer …`). The only auth the Gandi LiveDNS Role accepts.
 _Avoid_: API key, Apikey
+
+**Vercel Project**:
+An application container within an explicitly selected Vercel account or team. It can exist without a Deployment or application source.
+_Avoid_: Deployment (when referring to the Project itself)
+
+**Deployment**:
+A published version of an application's source within a Vercel Project, associated with a deployment URL. A production Deployment is the version published for production use.
+_Avoid_: Project (when referring to a published version)

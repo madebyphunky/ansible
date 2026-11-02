@@ -5,7 +5,9 @@
   tasks:
     - name: Load nonsecret run manifest
       ansible.builtin.include_vars:
-        file: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/dns-run.json"
+        file: >-
+          {{ lookup('ansible.builtin.env', 'GANDI_LIVEDNS_TEST_MANIFEST') |
+             default(lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/.cache/gandi-live/run.json', true) }}
     - name: Invoke the public Role
       ansible.builtin.include_role:
-        name: madebyphunky.infra.dns_gandi_livedns
+        name: madebyphunky.gandi.livedns

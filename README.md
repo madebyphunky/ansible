@@ -1,88 +1,90 @@
-# madebyphunky.infra
+# madebyphunky Ansible Collections
 
-Small reusable Ansible Roles that Agents run to maintain project infrastructure.
-The repository root is the Collection root. Runtime requirements are Ansible Core
-2.18 or later, its supported controller Python, and Collection dependencies.
-No additional runtime Python packages are required by the Role.
+Small reusable Roles that Agents run to maintain project infrastructure. This
+repository contains independently installable provider Collections; the repository
+root is no longer an Ansible Collection.
 
-## Install and discover
+| Collection | Public Role | Purpose |
+| --- | --- | --- |
+| `madebyphunky.gandi` | `madebyphunky.gandi.livedns` | Converge explicitly owned Gandi LiveDNS record sets. |
+| `madebyphunky.vercel` | `madebyphunky.vercel.project` | Ensure a Vercel Project and optional GitHub repository/production deployment. |
+| `madebyphunky.github` | `madebyphunky.github.cli` | Ensure GitHub CLI is available. |
+| `madebyphunky.nodejs` | `madebyphunky.nodejs.setup` | Ensure a compatible Node.js runtime, npm, and npx are available. |
 
-```sh
-ansible-galaxy collection install git+https://github.com/madebyphunky/ansible.git
-```
+## Install
 
-For a local checkout, use `ansible-galaxy collection install . --force`.
-Collection dependencies (including `community.general >= 9.0.0`) are installed by
-Galaxy. There is no requirement to publish to Galaxy before using the Collection.
-
-| Role | Purpose |
-| --- | --- |
-| `madebyphunky.infra.dns_gandi_livedns` | Converge explicitly owned Gandi LiveDNS record sets. |
-
-Each Role's machine-readable interface is its `meta/argument_specs.yml`, with
-values in `defaults/main.yml`. See the [Role guide](roles/dns_gandi_livedns/README.md).
-The [glossary](GLOSSARY.md) defines the Collection's domain vocabulary.
-
-## Run through a thin playbook
-
-Create a credential-free input file, for example `dns-input.yml`:
-
-```yaml
-gandi_livedns_zone: example.com
-gandi_livedns_records:
-  - name: www
-    type: A
-    ttl: 300
-    values: ["192.0.2.10"]
-  - name: old
-    type: A
-    state: absent
-```
-
-Set `GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN` in your controller environment using your
-secret manager or shell, then run the installed Collection playbook:
+Use a checkout and Ansible Core 2.18 or 2.19 with a supported controller Python.
+Install the local Collections and their declared dependencies in dependency order:
 
 ```sh
-ansible-playbook madebyphunky.infra.dns_gandi_livedns -i localhost, -c local -e @dns-input.yml --check
-ansible-playbook madebyphunky.infra.dns_gandi_livedns -i localhost, -c local -e @dns-input.yml
+git clone git@github.com:madebyphunky/ansible.git
+cd ansible
+python scripts/collection_tools.py install
 ```
 
-The playbook defaults to `localhost`, gathers no facts, and only composes the Role.
-Override `target_hosts` explicitly if using another inventory host. Prefer local
-execution for this API-only Role; the target needs a supported Python and HTTPS
-connectivity to Gandi. The environment fallback is always read on the controller.
+The Python used for this command must have Ansible installed. This installs local
+sibling Collections before their consumers, avoiding registry lookups for packages
+that have not been published to Galaxy. External dependencies are installed by
+Galaxy. Use `--path /some/collection-directory` for an isolated installation and
+set `ANSIBLE_COLLECTIONS_PATH` to that directory for subsequent playbook runs.
 
-Alternatively include `madebyphunky.infra.dns_gandi_livedns` in your own playbook.
-Use separate invocations for separate zones. Provide the complete desired values
-of every present RRset: other tools must not manage values within the same RRset.
-Omission leaves records intact; deletion always requires `state: absent`.
+Build distributable archives without installing them:
 
-Never commit real tokens, secret environment files, vaulted PATs, or examples
-containing credentials. Credential-bearing tasks are redacted, including failures.
+```sh
+python scripts/collection_tools.py build
+```
 
-## Development and verification
+Archives are written to `artifacts/`. Each Collection can also be built independently
+from its own source directory. See each Collection's README and Role argument
+specifications for inputs, runtime prerequisites, and execution examples. Thin
+example playbooks gather no unnecessary facts and default to localhost.
 
-Use Python 3.12 for the development tools:
+## Migration from madebyphunky.infra
+
+Replace `madebyphunky.infra.dns_gandi_livedns` with
+`madebyphunky.gandi.livedns`, including the Collection example playbook invocation.
+The old Role is removed; there is no compatibility alias. Existing Gandi input
+variables, environment fallback, Managed-set ownership, and DNS behaviour are
+unchanged. Install `madebyphunky.gandi` and update consumer playbooks before running.
+An old locally installed `madebyphunky.infra` package is not automatically removed
+from your machine; the new distribution does not include it.
+
+The Gandi source moved to `collections/gandi`. Documentation, examples, CI, and
+live Molecule tests now use the new public name. See
+[the migration decision](docs/adr/0001-provider-scoped-collections.md).
+
+## Credentials
+
+Vercel/GitHub Roles accept explicit Ansible variables named `VERCEL_TOKEN` and
+`GH_TOKEN`, falling back to the controller environment variables with those same
+names. The names are shared across provider Roles, matching their official CLIs.
+Explicit variables take precedence. Credentials are passed through process
+environments and redacted rather than included in command arguments.
+
+Gandi continues to use `gandi_livedns_personal_access_token`, falling back to
+`GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN`. Never commit tokens, secret environment files,
+vault files containing credentials, or real credentials in examples.
+
+## Development
 
 ```sh
 python3.12 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements-dev.txt
-ansible-galaxy collection install . --force
+python scripts/collection_tools.py install
 ansible-lint
-black --check tests
+black --check tests scripts collections
 pytest -q tests
 ```
 
-The tests build and install the actual Collection into a temporary directory and
-invoke the public Role. An isolated provider double replaces only the external
-module, never the Role. These tests do not use Gandi credentials or networking.
-They verify validation before mutation, whole-RRset ownership, credential selection
-and redaction, convergence, check mode, and stop-on-first-failure semantics.
-The PR workflow tests Core 2.18 and 2.19. This is credential-free evidence, not a
-substitute for the live acceptance gate.
+Contract tests build and install the actual Collections into isolated paths and
+invoke public Roles. Isolated provider/CLI doubles keep PR checks credential-free.
+The Gandi test provider records calls so validation-before-mutation, ownership,
+redaction, idempotency, and stop-on-failure promises are observable.
 
-See [live verification](docs/live-verification.md) for the dedicated-zone Molecule
-scenario and protected CI setup. A successful live run is required before calling
-the Role ready. Local live acceptance passed on 2026-11-02, including verified cleanup; see the
-live verification guide for evidence. Protected CI still needs environment setup.
+Live acceptance is separate and uses protected GitHub Actions environments,
+explicit test accounts, unique disposable resources, and exact-identity cleanup.
+See [Gandi live verification](docs/live-verification.md) and
+[Vercel live verification](docs/vercel-live-verification.md). Local Gandi live
+acceptance passed before the namespace migration; new provider acceptance must
+report its own evidence. Missing credentials never count as a passing live run.

@@ -1,0 +1,46 @@
+---
+- name: Inspect GitHub CLI without reading authentication
+  madebyphunky.github.cli_info:
+    executable: "{{ github_cli_executable }}"
+  register: _github_cli_probe
+
+- name: Validate the supported installation platform
+  ansible.builtin.assert:
+    that: _github_cli_probe.system == 'Darwin' or _github_cli_probe.distribution in ['Ubuntu', 'Debian']
+    fail_msg: GitHub CLI setup supports macOS with Homebrew and Ubuntu/Debian.
+
+- name: Require installation permission when GitHub CLI is unavailable
+  ansible.builtin.assert:
+    that: github_cli_install or _github_cli_probe.available or ansible_check_mode
+    fail_msg: GitHub CLI is missing or unusable; enable github_cli_install or supply github_cli_executable.
+
+- name: Install GitHub CLI when required
+  ansible.builtin.include_tasks:
+    file: "{{ 'darwin' if _github_cli_probe.system == 'Darwin' else 'debian' }}.yml"
+  when:
+    - not _github_cli_probe.available
+    - github_cli_install
+    - not ansible_check_mode
+
+- name: Verify the installed GitHub CLI
+  madebyphunky.github.cli_info:
+    executable: "{{ _github_cli_installed_path }}"
+  register: _github_cli_installed
+  when:
+    - not _github_cli_probe.available
+    - github_cli_install
+    - not ansible_check_mode
+
+- name: Publish the executable path and check-mode limitation
+  ansible.builtin.set_fact:
+    github_cli_result: >-
+      {{ (_github_cli_installed if _github_cli_installed_path is defined and not ansible_check_mode
+          and not _github_cli_probe.available else _github_cli_probe) |
+         combine({'planned': not _github_cli_probe.available and ansible_check_mode}) }}
+  changed_when: ansible_check_mode and not _github_cli_probe.available
+
+- name: Require a usable GitHub CLI after setup
+  ansible.builtin.assert:
+    that: github_cli_result.available
+    fail_msg: GitHub CLI installation completed but its executable is unusable.
+  when: not ansible_check_mode

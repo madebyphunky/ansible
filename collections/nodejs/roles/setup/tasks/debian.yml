@@ -1,0 +1,41 @@
+---
+- name: Install package-repository prerequisites
+  ansible.builtin.apt:
+    name: [ca-certificates, python3-apt]
+    state: present
+    update_cache: true
+  become: true
+
+- name: Create APT keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Install NodeSource repository signing key
+  ansible.builtin.get_url:
+    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+    dest: /etc/apt/keyrings/nodesource.asc
+    mode: '0644'
+  become: true
+
+- name: Configure the signed NodeSource LTS repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/nodesource.asc] https://deb.nodesource.com/node_{{ nodejs_lts_major }}.x nodistro main"
+    filename: madebyphunky-nodejs
+    state: present
+    update_cache: false
+  become: true
+
+- name: Install Node.js including npm and npx  # noqa package-latest
+  # This branch runs only for a missing/incompatible runtime; upgrade within the selected LTS repository.
+  ansible.builtin.apt:
+    name: nodejs
+    state: latest
+    update_cache: true
+  become: true
+
+- name: Select package-managed executable paths
+  ansible.builtin.set_fact:
+    _nodejs_installed_bin: /usr/bin

@@ -1,0 +1,6 @@
+---
+- name: Set up nodejs tooling
+  hosts: "{{ target_hosts | default('localhost') }}"
+  gather_facts: false
+  roles:
+    - role: madebyphunky.nodejs.setup

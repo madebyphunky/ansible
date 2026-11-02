@@ -1,0 +1,10 @@
+---
+# Four independently packaged Collections share this repository's tests and CI.
+exclude_paths:
+  - .cache/
+  - .ansible/
+  - artifacts/
+skip_list:
+  # Public variables use provider prefixes (and documented uppercase token names),
+  # not generic short Role names such as setup, cli, or livedns.
+  - var-naming[no-role-prefix]

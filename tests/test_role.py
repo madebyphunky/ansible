@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from runner import changed
+from runner import changed, invoke
 
 
 def test_converge_replace_omit_delete_and_check_mode(contract):
@@ -131,8 +131,7 @@ def test_stop_on_failure_retains_completed_changes_and_redacts(contract):
 def test_installed_example_syntax_and_safe_default(installed, contract, tmp_path):
     _, variables, env, data = contract
     playbook = (
-        installed
-        / "ansible_collections/madebyphunky/infra/playbooks/dns_gandi_livedns.yml"
+        installed / "ansible_collections/madebyphunky/gandi/playbooks/livedns.yml"
     )
     result = subprocess.run(
         ["ansible-playbook", str(playbook), "--syntax-check"],
@@ -187,3 +186,11 @@ def test_values_pass_through_without_requoting_or_expansion(contract):
     result = run()
     assert result.returncode == 0, result.stdout
     assert data()["records"]["example.com/txt/txt"]["values"] == record["values"]
+
+
+def test_old_role_is_not_shipped(installed, contract):
+    _, variables, env, _ = contract
+    assert not (installed / "ansible_collections/madebyphunky/infra").exists()
+    result = invoke(variables, env=env, role="madebyphunky.infra.dns_gandi_livedns")
+    assert result.returncode != 0
+    assert "was not found" in result.stdout

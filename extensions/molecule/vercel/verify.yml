@@ -1,0 +1,17 @@
+---
+- name: Verify isolated Vercel and GitHub fixtures
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vercel_live_manifest: >-
+      {{ lookup('ansible.builtin.env', 'VERCEL_TEST_MANIFEST') |
+         default(lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/.cache/vercel-live/run.json', true) }}
+  tasks:
+    - name: Verify only exact test-owned resource identities
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/tests/live_vercel_acceptance.py"
+          - verify
+          - "{{ vercel_live_manifest }}"
+      changed_when: false

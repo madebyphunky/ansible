@@ -1,0 +1,24 @@
+---
+argument_specs:
+  main:
+    short_description: Ensure compatible Node.js, npm, and npx are available.
+    options:
+      nodejs_node_executable:
+        type: str
+        description: Node.js executable name or absolute path; defaults to node.
+      nodejs_npm_executable:
+        type: str
+        description: npm executable name or absolute path; defaults to npm.
+      nodejs_npx_executable:
+        type: str
+        description: npx executable name or absolute path; defaults to npx.
+      nodejs_install:
+        type: bool
+        description: Install missing or incompatible tools; defaults to true.
+      nodejs_lts_major:
+        type: int
+        description: Active LTS major installed when setup is needed; defaults to 26.
+      nodejs_compatible_majors:
+        type: list
+        elements: int
+        description: Node major releases accepted for reuse; defaults to 22, 24, and 26.

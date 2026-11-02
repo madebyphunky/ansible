@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Split provider Roles into independently installable gandi, vercel, github, and
+  nodejs Collections; the repository root is no longer a Collection.
+- Rename the Gandi Role to `madebyphunky.gandi.livedns` without an alias; inputs
+  and DNS behaviour are unchanged.
+- Add Vercel Project management and reusable Node.js/GitHub CLI setup.
+
 ## 0.1.0
 
 - Add the `madebyphunky.infra` Collection and the `dns_gandi_livedns` Role.

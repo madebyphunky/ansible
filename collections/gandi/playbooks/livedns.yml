@@ -3,4 +3,4 @@
   hosts: "{{ target_hosts | default('localhost') }}"
   gather_facts: false
   roles:
-    - role: madebyphunky.infra.dns_gandi_livedns
+    - role: madebyphunky.gandi.livedns

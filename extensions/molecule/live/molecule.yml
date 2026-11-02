@@ -24,9 +24,12 @@ verifier:
   name: ansible
 scenario:
   test_sequence:
+    - cleanup
+    - destroy
     - syntax
     - prepare
     - converge
     - idempotence
     - verify
     - cleanup
+    - destroy
