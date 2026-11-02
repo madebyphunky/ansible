@@ -1,0 +1,13 @@
+---
+- name: Verify the live Role contract
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Verify public results and provider state
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/tests/live_acceptance.py"
+          - verify
+          - "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/dns-run.json"
+      changed_when: false

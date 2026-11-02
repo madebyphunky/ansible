@@ -1,0 +1,32 @@
+---
+- name: Validate record identity and desired state
+  ansible.builtin.assert:
+    that:
+      - gandi_livedns_entry is mapping
+      - gandi_livedns_entry.name is string
+      - gandi_livedns_entry.name | length > 0
+      - >-
+        gandi_livedns_entry.name == '@' or
+        gandi_livedns_entry.name is match('^(?:\*|[a-zA-Z0-9_-]+)(?:\.[a-zA-Z0-9_-]+)*$')
+      - gandi_livedns_entry.name | lower != gandi_livedns_zone | lower
+      - not (gandi_livedns_entry.name | lower).endswith('.' ~ (gandi_livedns_zone | lower))
+      - gandi_livedns_entry.type is string
+      - gandi_livedns_entry.type is match('^[A-Z][A-Z0-9]*$')
+      - gandi_livedns_entry.state | default('present') in ['present', 'absent']
+      - gandi_livedns_entry.keys() | difference(['name', 'type', 'state', 'ttl', 'values']) | length == 0
+    fail_msg: Use a relative name or @, an uppercase type, and a supported state and fields.
+
+- name: Validate complete desired content for present record sets
+  ansible.builtin.assert:
+    that:
+      - gandi_livedns_entry.ttl is defined
+      - gandi_livedns_entry.ttl is integer
+      - gandi_livedns_entry.ttl is not boolean
+      - gandi_livedns_entry['values'] is defined
+      - gandi_livedns_entry['values'] is sequence
+      - gandi_livedns_entry['values'] is not string
+      - gandi_livedns_entry['values'] is not mapping
+      - gandi_livedns_entry['values'] | length > 0
+      - gandi_livedns_entry['values'] | select('string') | list | length == gandi_livedns_entry['values'] | length
+    fail_msg: Present entries require an integer TTL and a nonempty list of string values.
+  when: gandi_livedns_entry.state | default('present') == 'present'

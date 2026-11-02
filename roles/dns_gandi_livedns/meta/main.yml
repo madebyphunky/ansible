@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: madebyphunky
+  description: Manage explicitly owned Gandi LiveDNS record sets.
+  license: MIT
+  min_ansible_version: '2.18'
+dependencies: []

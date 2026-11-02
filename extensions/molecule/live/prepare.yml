@@ -1,0 +1,13 @@
+---
+- name: Prepare isolated live DNS fixtures
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Allocate and seed exact test identities
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/tests/live_acceptance.py"
+          - prepare
+          - "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/dns-run.json"
+      changed_when: false
