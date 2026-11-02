@@ -1,0 +1,7 @@
+---
+- name: Finish the API-only test lifecycle
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Leave provider cleanup to the exact-identity cleanup playbook
+      ansible.builtin.meta: noop

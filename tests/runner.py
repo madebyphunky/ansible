@@ -7,17 +7,27 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-ROLE = "madebyphunky.infra.dns_gandi_livedns"
+ROLE = "madebyphunky.gandi.livedns"
 
 
-def invoke(variables, *, env=None, check=False, verbose=False):
+def invoke(
+    variables,
+    *,
+    env=None,
+    check=False,
+    verbose=False,
+    role=ROLE,
+    tasks_after=None,
+    timeout=120
+):
     play = [
         {
             "name": "Public Role contract",
             "hosts": "localhost",
             "gather_facts": False,
             "vars": variables,
-            "roles": [ROLE],
+            "roles": [role],
+            "tasks": tasks_after or [],
         }
     ]
     with tempfile.TemporaryDirectory(prefix="infra-play-") as directory:
@@ -35,7 +45,7 @@ def invoke(variables, *, env=None, check=False, verbose=False):
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            timeout=120,
+            timeout=timeout,
         )
 
 

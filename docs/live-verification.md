@@ -1,6 +1,6 @@
 # LiveDNS acceptance
 
-The live Molecule scenario tests the installed public Role against actual Gandi
+The live Molecule scenario tests `madebyphunky.gandi.livedns` against actual Gandi
 LiveDNS. It uses API reads, so acceptance does not depend on recursive DNS caches.
 Use a dedicated test zone, never production. Use a PAT scoped as narrowly as Gandi
 permits for that zone, with permission to read and manage its LiveDNS records.
@@ -16,17 +16,22 @@ variable `GANDI_LIVEDNS_TEST_ZONE`. Do not put either credential in committed fi
 The zone name is configuration rather than a secret. PR checks receive no PAT.
 
 Manually dispatch the **LiveDNS acceptance** workflow on a trusted branch. It
-installs the Collection, runs `molecule test -s live`, then attempts cleanup even
-when acceptance fails. Concurrency prevents one CI live run cancelling another.
+installs the Collection, runs the live scenario, then attempts cleanup even when
+acceptance fails. Concurrency prevents one CI live run cancelling another.
 The readiness gate is a successful workflow run, not merely a successful PR job.
 
 ## Local run
 
-After installing the development dependencies and the Collection, supply the PAT
-and test zone through environment variables and run:
+Install the development dependencies and the Gandi Collection:
 
 ```sh
-molecule test -s live
+ansible-galaxy collection install ./collections/gandi --force
+```
+
+Supply the PAT and test zone through environment variables, then run:
+
+```sh
+MOLECULE_GLOB='extensions/molecule/*/molecule.yml' molecule test -s live
 ```
 
 The scenario allocates unique names, confirms their A RRsets are initially absent,
@@ -42,10 +47,13 @@ Cleanup attempts each exact allocated RRset independently, verifies absence, and
 removes the manifest only after all succeed. There is no zone-wide or prefix-wide
 cleanup. The workflow retries cleanup with an `always()` step; Molecule also runs
 cleanup after test failures. A forcibly killed runner cannot guarantee cleanup.
-Retain the nonsecret run manifest if cleanup is interrupted or fails, and retry:
+The manifest is stored at `.cache/gandi-live/run.json`, outside Molecule's
+ephemeral directory. Override `GANDI_LIVEDNS_TEST_MANIFEST` for parallel local runs.
+The scenario resets its lifecycle state between complete tests.
+Retain the nonsecret manifest if cleanup is interrupted or fails, and retry:
 
 ```sh
-molecule cleanup -s live
+MOLECULE_GLOB='extensions/molecule/*/molecule.yml' molecule cleanup -s live
 ```
 
 Do not start a new run over an existing manifest. If the runner is lost, inspect
@@ -69,15 +77,10 @@ exact identities saved in the manifest. An empty suffix tests directly in the zo
 
 ## Recorded local acceptance: 2026-11-02
 
-`molecule test -s live` passed against the installed Collection with Ansible Core
-2.19.14 and community.general 13.5.0. Gandi exposes `markharwood.info` as the
-zone; the run restricted every test identity to relative names ending in `.xyz`,
-under the caller-selected `xyz.markharwood.info` subdomain.
-
-Preparation, convergence, Molecule idempotence (zero changes), and the live verifier
-all passed. Verification covered replacement of values and TTL, check mode without
-mutation, omission and sentinel preservation, rejection of invalid input before
-mutation, explicit deletion, and failure-fixture cleanup. Final cleanup verified
-absence of all allocated RRsets, and an additional cleanup invocation succeeded.
-No PAT is recorded here or in the run manifest. Protected GitHub Actions acceptance
-still requires the documented environment configuration; this was a local run.
+The full live scenario passed using the installed `madebyphunky.gandi.livedns`
+Role on Ansible Core 2.18.20 and community.general 13.5.0. Tests remained under
+`xyz.markharwood.info` within the `markharwood.info` zone. Creation, Molecule
+idempotence (zero changes), replacement, omission/sentinel preservation, check
+mode, invalid-input rejection, explicit deletion, failure-fixture cleanup, final
+verified cleanup, and lifecycle reset all passed. An additional cleanup invocation
+succeeded, and the exact-identity manifest was removed.

@@ -1,0 +1,6 @@
+---
+- name: Set up github tooling
+  hosts: "{{ target_hosts | default('localhost') }}"
+  gather_facts: false
+  roles:
+    - role: madebyphunky.github.cli

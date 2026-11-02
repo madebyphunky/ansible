@@ -1,0 +1,21 @@
+---
+- name: Find Homebrew
+  ansible.builtin.command:
+    argv: [brew, --prefix]
+  register: _nodejs_brew
+  changed_when: false
+
+- name: Install the selected Node.js LTS formula
+  community.general.homebrew:
+    name: "node@{{ nodejs_lts_major }}"
+    state: present
+
+- name: Resolve the LTS formula prefix without changing shell configuration
+  ansible.builtin.command:
+    argv: [brew, --prefix, "node@{{ nodejs_lts_major }}"]
+  register: _nodejs_brew_node
+  changed_when: false
+
+- name: Select Homebrew executable paths
+  ansible.builtin.set_fact:
+    _nodejs_installed_bin: "{{ _nodejs_brew_node.stdout | trim }}/bin"

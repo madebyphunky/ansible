@@ -1,0 +1,54 @@
+---
+- name: Inspect the existing runtime without downloading packages
+  madebyphunky.nodejs.runtime_info:
+    node_executable: "{{ nodejs_node_executable }}"
+    npm_executable: "{{ nodejs_npm_executable }}"
+    npx_executable: "{{ nodejs_npx_executable }}"
+    compatible_majors: "{{ nodejs_compatible_majors }}"
+  register: _nodejs_probe
+
+- name: Validate supported platform and runtime policy
+  ansible.builtin.assert:
+    that:
+      - _nodejs_probe.system == 'Darwin' or _nodejs_probe.distribution in ['Ubuntu', 'Debian']
+      - nodejs_lts_major in nodejs_compatible_majors
+    fail_msg: Node.js setup supports macOS with Homebrew and Ubuntu/Debian; select a compatible LTS major.
+
+- name: Require installation permission when the runtime is unavailable
+  ansible.builtin.assert:
+    that: nodejs_install or _nodejs_probe.available or ansible_check_mode
+    fail_msg: A compatible Node.js runtime with npm and npx is missing; enable nodejs_install or supply working executable paths.
+
+- name: Install the selected LTS runtime when required
+  ansible.builtin.include_tasks:
+    file: "{{ 'darwin' if _nodejs_probe.system == 'Darwin' else 'debian' }}.yml"
+  when:
+    - not _nodejs_probe.available
+    - nodejs_install
+    - not ansible_check_mode
+
+- name: Verify installed runtime
+  madebyphunky.nodejs.runtime_info:
+    node_executable: "{{ _nodejs_installed_bin }}/node"
+    npm_executable: "{{ _nodejs_installed_bin }}/npm"
+    npx_executable: "{{ _nodejs_installed_bin }}/npx"
+    compatible_majors: "{{ nodejs_compatible_majors }}"
+  register: _nodejs_installed
+  when:
+    - not _nodejs_probe.available
+    - not ansible_check_mode
+    - nodejs_install
+
+- name: Publish runtime executable paths and check-mode limitations
+  ansible.builtin.set_fact:
+    nodejs_runtime: >-
+      {{ (_nodejs_installed if _nodejs_installed_bin is defined and not ansible_check_mode
+          and not _nodejs_probe.available else _nodejs_probe) |
+         combine({'planned': not _nodejs_probe.available and ansible_check_mode}) }}
+  changed_when: ansible_check_mode and not _nodejs_probe.available
+
+- name: Require a usable runtime after setup
+  ansible.builtin.assert:
+    that: nodejs_runtime.available
+    fail_msg: Installed runtime is not usable; inspect nodejs_runtime and the selected executable paths.
+  when: not ansible_check_mode

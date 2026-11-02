@@ -1,0 +1,20 @@
+---
+- name: Converge an isolated Vercel Project and private GitHub repository
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vercel_live_manifest_path: >-
+      {{ lookup('ansible.builtin.env', 'VERCEL_TEST_MANIFEST') |
+         default(lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/.cache/vercel-live/run.json', true) }}
+    vercel_live_manifest: "{{ lookup('ansible.builtin.file', vercel_live_manifest_path) | from_json }}"
+  tasks:
+    - name: Invoke the public Vercel Role
+      ansible.builtin.include_role:
+        name: madebyphunky.vercel.project
+      vars:
+        vercel_project_name: "{{ vercel_live_manifest.main }}"
+        vercel_scope_type: "{{ vercel_live_manifest.scope_type }}"
+        vercel_scope_id: "{{ vercel_live_manifest.scope_id }}"
+        vercel_source_mode: ensure
+        github_owner: "{{ vercel_live_manifest.owner }}"
+        github_repository: "{{ vercel_live_manifest.repository_name }}"

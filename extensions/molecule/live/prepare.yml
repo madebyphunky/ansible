@@ -9,5 +9,7 @@
           - "{{ ansible_playbook_python }}"
           - "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/tests/live_acceptance.py"
           - prepare
-          - "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/dns-run.json"
+          - >-
+            {{ lookup('ansible.builtin.env', 'GANDI_LIVEDNS_TEST_MANIFEST') |
+               default(lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/.cache/gandi-live/run.json', true) }}
       changed_when: false

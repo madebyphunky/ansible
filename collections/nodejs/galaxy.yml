@@ -1,0 +1,13 @@
+---
+namespace: madebyphunky
+name: nodejs
+version: 0.2.0
+readme: README.md
+authors: [madebyphunky]
+description: Provide a reusable Node.js, npm, and npx runtime.
+license: [MIT]
+tags: [infrastructure, tools]
+repository: https://github.com/madebyphunky/ansible
+issues: https://github.com/madebyphunky/ansible/issues
+dependencies:
+  community.general: ">=9.0.0"

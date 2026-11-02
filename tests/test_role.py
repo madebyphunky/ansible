@@ -1,7 +1,6 @@
 import copy
 import json
 import subprocess
-from pathlib import Path
 
 import pytest
 
@@ -131,8 +130,7 @@ def test_stop_on_failure_retains_completed_changes_and_redacts(contract):
 def test_installed_example_syntax_and_safe_default(installed, contract, tmp_path):
     _, variables, env, data = contract
     playbook = (
-        installed
-        / "ansible_collections/madebyphunky/infra/playbooks/dns_gandi_livedns.yml"
+        installed / "ansible_collections/madebyphunky/gandi/playbooks/livedns.yml"
     )
     result = subprocess.run(
         ["ansible-playbook", str(playbook), "--syntax-check"],

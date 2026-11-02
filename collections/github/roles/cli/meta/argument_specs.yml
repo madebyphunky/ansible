@@ -1,0 +1,11 @@
+---
+argument_specs:
+  main:
+    short_description: Ensure GitHub CLI is available.
+    options:
+      github_cli_executable:
+        type: str
+        description: GitHub CLI executable name or absolute path; defaults to gh.
+      github_cli_install:
+        type: bool
+        description: Install when the CLI is missing; defaults to true.

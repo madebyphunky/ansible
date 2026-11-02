@@ -1,0 +1,20 @@
+---
+- name: Find Homebrew
+  ansible.builtin.command:
+    argv: [brew, --prefix]
+  changed_when: false
+
+- name: Install GitHub CLI with Homebrew
+  community.general.homebrew:
+    name: gh
+    state: present
+
+- name: Resolve the GitHub CLI formula prefix
+  ansible.builtin.command:
+    argv: [brew, --prefix, gh]
+  register: _github_cli_brew
+  changed_when: false
+
+- name: Select the Homebrew executable
+  ansible.builtin.set_fact:
+    _github_cli_installed_path: "{{ _github_cli_brew.stdout | trim }}/bin/gh"

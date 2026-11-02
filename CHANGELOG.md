@@ -1,9 +1,13 @@
 # Changelog
 
-## 0.1.0
+## Unreleased
 
-- Add the `madebyphunky.infra` Collection and the `dns_gandi_livedns` Role.
-- Validate complete explicit RRsets before mutation, with PAT authentication,
-  check mode, and ordered execution that stops on failure.
-- Add credential-free contract checks and a protected live Molecule scenario.
-- Local Gandi acceptance passed on 2026-11-02, including verified cleanup.
+- Provide independently installable Gandi, Vercel, GitHub, and Node.js Collections.
+- Manage explicit Gandi LiveDNS RRsets with PAT authentication, validation before
+  mutation, check mode, idempotency, and ordered execution that stops on failure.
+- Add Vercel Project management and reusable Node.js/GitHub CLI setup.
+- Verify live Vercel/GitHub production deployment, historical Deployment reuse,
+  and Gandi LiveDNS behaviour, including exact-resource cleanup.
+- Provide credential-free contract checks and protected live Molecule scenarios.
+- Keep live cleanup manifests outside Molecule ephemeral storage and reset
+  lifecycle state between tests.

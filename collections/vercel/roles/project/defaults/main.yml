@@ -1,0 +1,11 @@
+---
+vercel_source_mode: none
+vercel_deploy: false
+vercel_project_settings: {}
+vercel_deployment_timeout: 900
+vercel_poll_interval: 5
+vercel_retry_failed_deployment: false
+vercel_manage_prerequisites: true
+vercel_npx_executable: npx
+vercel_gh_executable: gh
+vercel_node_executable: node

@@ -82,7 +82,7 @@ def prepare(path):
             "Set the dedicated test zone and PAT before running live tests"
         )
     suffix = os.environ.get("GANDI_LIVEDNS_TEST_NAME_SUFFIX", "")
-    prefix = "infra-test-" + uuid.uuid4().hex
+    prefix = "gandi-test-" + uuid.uuid4().hex
     names = {
         key: prefix + "-" + key + ("." + suffix if suffix else "")
         for key in ("managed", "omitted", "sentinel", "failure")

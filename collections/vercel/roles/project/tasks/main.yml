@@ -1,0 +1,58 @@
+---
+- name: Validate and converge the explicitly scoped Project
+  block:
+    # The same module validates before prerequisite installation. Check mode never launches npx.
+    - name: Validate complete input before changing the host or provider
+      madebyphunky.vercel.project: &project_parameters
+        name: "{{ vercel_project_name }}"
+        scope_type: "{{ vercel_scope_type }}"
+        scope_id: "{{ vercel_scope_id }}"
+        source_mode: "{{ vercel_source_mode }}"
+        github_owner: "{{ github_owner | default(omit) }}"
+        github_repository: "{{ github_repository | default(omit) }}"
+        vercel_token: "{{ VERCEL_TOKEN | default(lookup('ansible.builtin.env', 'VERCEL_TOKEN')) }}"
+        github_token: "{{ GH_TOKEN | default(lookup('ansible.builtin.env', 'GH_TOKEN')) }}"
+        settings: "{{ vercel_project_settings }}"
+        deploy: "{{ vercel_deploy }}"
+        git_sha: "{{ vercel_git_sha | default(omit) }}"
+        deployment_timeout: "{{ vercel_deployment_timeout }}"
+        poll_interval: "{{ vercel_poll_interval }}"
+        retry_failed_deployment: "{{ vercel_retry_failed_deployment }}"
+        npx_executable: "{{ nodejs_runtime.npx_path | default(vercel_npx_executable) if vercel_manage_prerequisites else vercel_npx_executable }}"
+        gh_executable: "{{ github_cli_result.path | default(vercel_gh_executable) if vercel_manage_prerequisites else vercel_gh_executable }}"
+        node_executable: "{{ nodejs_runtime.node_path | default(vercel_node_executable) if vercel_manage_prerequisites else vercel_node_executable }}"
+      check_mode: true
+      changed_when: false
+      no_log: true
+      register: _vercel_project_operation
+
+    - name: Ensure the Node.js runtime is available
+      ansible.builtin.include_role:
+        name: madebyphunky.nodejs.setup
+      when: vercel_manage_prerequisites
+
+    - name: Ensure GitHub CLI is available for repository operations
+      ansible.builtin.include_role:
+        name: madebyphunky.github.cli
+      when:
+        - vercel_manage_prerequisites
+        - vercel_source_mode != 'none'
+
+    - name: Ensure Project and optional production version
+      madebyphunky.vercel.project: *project_parameters
+      no_log: true
+      register: _vercel_project_operation
+
+    - name: Expose sanitized Project results
+      ansible.builtin.set_fact:
+        vercel_project_result: "{{ _vercel_project_operation.result }}"
+  rescue:
+    - name: Preserve sanitized partial resource identities
+      ansible.builtin.set_fact:
+        vercel_project_result: "{{ _vercel_project_operation.result | default({}) }}"
+
+    - name: Report the Project operation failure
+      ansible.builtin.fail:
+        msg: >-
+          {{ _vercel_project_operation.msg | default('Project prerequisite setup failed; see the failing task') }};
+          partial result: {{ vercel_project_result | to_json }}

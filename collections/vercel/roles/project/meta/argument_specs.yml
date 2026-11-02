@@ -1,0 +1,66 @@
+---
+argument_specs:
+  main:
+    short_description: Ensure an explicitly scoped Vercel Project and optional deployment.
+    options:
+      VERCEL_TOKEN:
+        type: str
+        no_log: true
+        description: Explicit Vercel token; falls back to the controller environment of the same name.
+      GH_TOKEN:
+        type: str
+        no_log: true
+        description: Explicit GitHub token; falls back to the controller environment of the same name.
+      vercel_project_name:
+        type: str
+        required: true
+        description: Explicit Project name.
+      vercel_scope_type:
+        type: str
+        required: true
+        choices: [personal, team]
+        description: Whether scope_id is a personal account or team ID.
+      vercel_scope_id:
+        type: str
+        required: true
+        description: Expected provider account or team ID, verified before mutation.
+      vercel_source_mode:
+        type: str
+        choices: [none, existing, ensure]
+        description: No repository, link existing, or ensure a repository exists and link it.
+      github_owner:
+        type: str
+        description: Explicit GitHub repository owner.
+      github_repository:
+        type: str
+        description: Explicit GitHub repository name.
+      vercel_project_settings:
+        type: dict
+        description: Supplied framework, rootDirectory, buildCommand, installCommand, outputDirectory fields.
+      vercel_deploy:
+        type: bool
+        description: Ensure the exact git SHA is the active production version.
+      vercel_git_sha:
+        type: str
+        description: Exact existing 40-character Git commit SHA when deploying.
+      vercel_deployment_timeout:
+        type: int
+        description: Provider/deployment wait budget in seconds; defaults to 900.
+      vercel_poll_interval:
+        type: int
+        description: Status polling interval in seconds; defaults to 5.
+      vercel_retry_failed_deployment:
+        type: bool
+        description: Explicitly permit retry after a matching failed deployment.
+      vercel_manage_prerequisites:
+        type: bool
+        description: Compose Node.js and GitHub CLI setup when required; defaults to true.
+      vercel_npx_executable:
+        type: str
+        description: npx executable for callers managing prerequisites themselves.
+      vercel_gh_executable:
+        type: str
+        description: GitHub CLI executable for callers managing prerequisites themselves.
+      vercel_node_executable:
+        type: str
+        description: Node executable for callers managing prerequisites themselves.
