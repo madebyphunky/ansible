@@ -20,6 +20,7 @@ provisioner:
     converge: converge.yml
     verify: verify.yml
     cleanup: cleanup.yml
+    destroy: destroy.yml
 verifier:
   name: ansible
 scenario:

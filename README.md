@@ -85,6 +85,6 @@ redaction, idempotency, and stop-on-failure promises are observable.
 Live acceptance is separate and uses protected GitHub Actions environments,
 explicit test accounts, unique disposable resources, and exact-identity cleanup.
 See [Gandi live verification](docs/live-verification.md) and
-[Vercel live verification](docs/vercel-live-verification.md). Local Gandi live
-acceptance passed before the namespace migration; new provider acceptance must
-report its own evidence. Missing credentials never count as a passing live run.
+[Vercel live verification](docs/vercel-live-verification.md). Local Vercel/GitHub acceptance passed on 2026-11-02, including historical
+production reuse and exact-resource cleanup. The renamed Gandi Role also passed live acceptance and verified cleanup;
+its migration evidence is recorded separately. Missing credentials never count as a passing live run.

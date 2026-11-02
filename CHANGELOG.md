@@ -7,6 +7,10 @@
 - Rename the Gandi Role to `madebyphunky.gandi.livedns` without an alias; inputs
   and DNS behaviour are unchanged.
 - Add Vercel Project management and reusable Node.js/GitHub CLI setup.
+- Verify live Vercel/GitHub production deployment, historical reuse, and cleanup,
+  plus live acceptance of the renamed Gandi Role.
+- Keep live cleanup manifests outside Molecule ephemeral storage and reset
+  lifecycle state between tests.
 
 ## 0.1.0
 

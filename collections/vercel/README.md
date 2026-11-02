@@ -101,7 +101,9 @@ Project contains `id`, `name`, `account_id`, and supported `settings`; repositor
 contains `id`, `full_name`, `url`, `private`; deployment contains `id`, HTTPS `url`,
 `state`, requested `sha`, and `active`. Actions record resource creation, linking,
 settings updates, deployment creation, or promotion. Failures expose sanitized
-partial results before failing; preserve these identifiers for inspection.
+partial results and sanitized provider build reasons before failing; preserve
+these identifiers for inspection.
 
-No live Vercel/GitHub acceptance is claimed until protected scoped credentials and
-GitHub App access are available and the live scenario passes.
+Local Vercel/GitHub acceptance passed on 2026-11-02, including exact-commit
+deployment, historical production promotion, idempotence, and verified cleanup.
+See the repository live-verification guide for evidence and protected CI setup.

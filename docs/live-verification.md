@@ -101,3 +101,14 @@ ephemeral directory, so pruning cannot discard failed-cleanup recovery identitie
 Override `GANDI_LIVEDNS_TEST_MANIFEST` for parallel local runs. The scenario resets
 Molecule's lifecycle state between complete tests so a previous prepared flag does
 not skip fixture creation on subsequent runs.
+
+## Provider namespace migration acceptance: 2026-11-02
+
+The full live scenario passed using the installed `madebyphunky.gandi.livedns`
+Role on Ansible Core 2.18.20 and community.general 13.5.0. Tests remained under
+`xyz.markharwood.info` within the `markharwood.info` zone. Creation, Molecule
+idempotence (zero changes), replacement, omission/sentinel preservation, check
+mode, invalid-input rejection, explicit deletion, failure-fixture cleanup, final
+verified cleanup, and lifecycle reset all passed. An additional cleanup invocation
+succeeded, and the exact-identity manifest was removed. The old credential had
+returned 403 before mutation; this acceptance used the caller's replacement PAT.

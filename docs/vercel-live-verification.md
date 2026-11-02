@@ -2,14 +2,14 @@
 
 The `vercel` Molecule scenario invokes the installed public
 `madebyphunky.vercel.project` Role and observes real provider state. It is a
-protected, manually triggered readiness gate; no Vercel/GitHub live run has been
-claimed yet. Credential-free harness tests establish cleanup identity guards,
+protected, manually triggered readiness gate; local acceptance passed on
+2026-11-02 as recorded below. Credential-free harness tests establish cleanup identity guards,
 not provider acceptance.
 
 ## Required protected configuration
 
 Use a dedicated Vercel test account/team and a GitHub owner configured for disposable
-private repositories. Configure the protected workflow environment with:
+private repositories. Configure the protected GitHub Actions environment `vercel-github-test` with:
 
 | Kind | Name | Meaning |
 | --- | --- | --- |
@@ -84,3 +84,27 @@ local offline checks. Missing credentials, owner permissions, GitHub App access,
 or a provider-side build failure leave live acceptance pending. The latest Vercel
 package is intentionally selected through npx, so provider compatibility must be
 verified by this scenario rather than assumed from a pinned CLI version.
+
+## Recorded local acceptance: 2026-11-02
+
+The full `vercel` Molecule scenario passed against the installed Collections in
+the caller-selected madebyphunky Vercel team and GitHub organization. The run used
+Ansible Core 2.18.20, Node.js 22.23.4, GitHub CLI 2.103.3, and the actual latest
+Vercel CLI 65.9.0 selected through npx.
+
+Passed: empty Projects, private empty repository creation and linking, unchanged
+Molecule idempotence, existing-repository reuse, settings preservation, mutation-free
+check mode, exact-commit production readiness, unchanged repeat deployment, a second
+production commit, and reusing/promoting the historical first Deployment without
+rebuilding it. Sentinel preservation and final exact-ID cleanup passed; an extra
+cleanup invocation also succeeded. No test resources or recovery manifest remained.
+
+The fixture stores its HTML under `public/`, matching the static output expected
+by Vercel. An earlier fixture failure exposed missing build-output diagnostics;
+the Role now returns the provider's sanitized build reason and partial resource
+identifiers on failure.
+
+For this local run, GH_TOKEN was supplied in process memory from the caller's
+authenticated GitHub CLI after its repo/delete_repo scopes were approved. No
+separate GitHub PAT was created or committed. Protected CI requires its own
+configured secret and environment; this evidence is a local run.
