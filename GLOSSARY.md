@@ -28,6 +28,14 @@ _Avoid_: full-zone sync, wipe-and-replace, unmanaged delete
 Gandi bearer credential for LiveDNS (`Authorization: Bearer …`). The only auth the Gandi LiveDNS Role accepts.
 _Avoid_: API key, Apikey
 
+**Application**:
+The product being built, with source hosted on GitHub, frontend on Vercel, and backend on Supabase.
+_Avoid_: project (when referring to the whole product rather than a provider Project)
+
+**Infrastructure setup**:
+Creating or linking the GitHub repository, Vercel Project, and Supabase Project for an Application. It can complete before application source exists.
+_Avoid_: project creation, Deployment, scaffolding
+
 **Vercel Project**:
 An application container within an explicitly selected Vercel account or team. It can exist without a Deployment or application source.
 _Avoid_: Deployment (when referring to the Project itself)
