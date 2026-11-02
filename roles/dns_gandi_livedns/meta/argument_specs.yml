@@ -1,0 +1,38 @@
+---
+argument_specs:
+  main:
+    short_description: Manage explicitly declared Gandi LiveDNS record sets.
+    options:
+      gandi_livedns_zone:
+        type: str
+        required: true
+        description: One Gandi LiveDNS zone, without a trailing dot.
+      gandi_livedns_personal_access_token:
+        type: str
+        no_log: true
+        description: PAT; otherwise read controller environment GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN.
+      gandi_livedns_records:
+        type: list
+        elements: dict
+        required: true
+        description: Nonempty explicit Managed set; omission never deletes records.
+        options:
+          name:
+            type: str
+            required: true
+            description: Relative name, or @ for the apex.
+          type:
+            type: str
+            required: true
+            description: Uppercase DNS record type.
+          state:
+            type: str
+            choices: [present, absent]
+            description: Desired state; defaults to present.
+          ttl:
+            type: int
+            description: Explicit TTL in seconds, required for present entries.
+          values:
+            type: list
+            elements: str
+            description: Complete nonempty values for present entries; supplied in provider format.

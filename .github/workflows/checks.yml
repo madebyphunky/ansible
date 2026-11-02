@@ -1,0 +1,29 @@
+---
+name: Checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ansible: ['2.18', '2.19']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install development tools
+        run: |
+          python -m pip install -r requirements-dev.txt
+          python -m pip install 'ansible-core~=${{ matrix.ansible }}.0'
+          ansible-galaxy collection install .
+      - name: Lint Ansible content
+        run: ansible-lint
+      - name: Check Python formatting
+        run: black --check tests
+      - name: Test the installed Collection contract without credentials
+        run: pytest -q tests
