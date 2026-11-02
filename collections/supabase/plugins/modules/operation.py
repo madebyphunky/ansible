@@ -10,7 +10,6 @@ import json
 import os
 from pathlib import Path
 import re
-import secrets
 import signal
 import shutil
 import subprocess
@@ -39,7 +38,7 @@ options:
     type: str
     required: true
   db_password:
-    description: Database password for migrations.
+    description: Explicit creation password or required migrations password; never rotates existing Projects.
     type: str
   organization:
     description: Explicit organization slug or ID.
@@ -96,16 +95,13 @@ EXAMPLES = r"""
     supabase_organization: my-organization
     supabase_project_name: my-project
     supabase_region: eu-west-2
+    supabase_project_password: "{{ vault_supabase_password }}"
 """
 RETURN = r"""
 result:
   description: Nonsecret project identity and operation summary.
   type: dict
   returned: always
-initial_password:
-  description: Sensitive generated creation password; public Role stores it under no_log.
-  type: str
-  returned: when creation was attempted
 """
 
 
@@ -162,7 +158,6 @@ class Supabase:
             "inspection_limited": False,
         }
         self.changed = False
-        self.password = ""
         self.deadline = time.monotonic() + self.p["timeout"]
         self.auth = None
         self.directory = None
@@ -178,6 +173,10 @@ class Supabase:
         if p["operation"] == "project":
             if not (p["organization"] or "").strip() or not (p["name"] or "").strip():
                 raise CliError("Supply explicit organization and Project name")
+            if p["db_password"] is not None and not p["db_password"].strip():
+                raise CliError(
+                    "supabase_project_password must be nonblank when supplied"
+                )
         elif not (p["project_ref"] or "").strip():
             raise CliError("Supply an explicit Project reference")
         if p["operation"] == "auth":
@@ -350,8 +349,8 @@ class Supabase:
         if row is None:
             if not (p["region"] or "").strip():
                 raise CliError("An explicit region is required to create a Project")
-            self.password = secrets.token_urlsafe(32)
-            self.result["password_change_required"] = True
+            if p["db_password"] is None:
+                raise CliError("Supply supabase_project_password to create a Project")
             self.result["creation_attempted"] = True
             # An indeterminate creation is never retried automatically.
             self.changed = True
@@ -365,7 +364,7 @@ class Supabase:
                     "--region",
                     p["region"],
                     "--db-password",
-                    self.password,
+                    p["db_password"],
                     "--yes",
                 ]
             )
@@ -577,12 +576,10 @@ def main():
             msg=message,
             changed=operation.changed,
             result=operation.result,
-            initial_password=operation.password,
         )
     module.exit_json(
         changed=operation.changed,
         result=operation.result,
-        initial_password=operation.password,
     )
 
 

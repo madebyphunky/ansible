@@ -23,7 +23,7 @@ call = {"operation": operation, "version": package, "args": list(args)}
 if "--db-password" in args:
     index = args.index("--db-password") + 1
     state["password"] = args[index]
-    call["args"][index] = "<generated>"
+    call["args"][index] = "<redacted>"
 state.setdefault("calls", []).append(call)
 
 
@@ -47,7 +47,7 @@ if operation == "projects list":
     finish(state.get("projects", []))
 if operation == "projects create":
     assert args[args.index("--org-id") + 1] == "my-org"
-    assert len(state["password"]) >= 32
+    assert state["password"]
     row = {
         "id": "testref",
         "ref": "testref",

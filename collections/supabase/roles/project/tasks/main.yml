@@ -14,6 +14,7 @@
         organization: "{{ supabase_organization }}"
         name: "{{ supabase_project_name }}"
         region: "{{ supabase_region | default(omit) }}"
+        db_password: "{{ supabase_project_password | default(omit) }}"
       args:
         validate_only: true
       no_log: true
@@ -34,26 +35,10 @@
       ansible.builtin.set_fact:
         supabase_project_result: "{{ _supabase_project_operation.result }}"
 
-    - name: Preserve the generated initial password as a sensitive fact
-      ansible.builtin.set_fact:
-        supabase_project_initial_password: "{{ _supabase_project_operation.initial_password | default('') }}"
-      no_log: true
-
-    - name: Explain how to handle the new initial database password
-      ansible.builtin.debug:
-        msg: >-
-          Capture supabase_project_initial_password securely using a no_log task,
-          then change the initial database password in Supabase and update consumers.
-      when: supabase_project_result.password_change_required | default(false)
   rescue:
     - name: Preserve partial Supabase project result
       ansible.builtin.set_fact:
         supabase_project_result: "{{ _supabase_project_operation.result | default({}) }}"
-
-    - name: Preserve the initial password after a partial creation failure
-      ansible.builtin.set_fact:
-        supabase_project_initial_password: "{{ _supabase_project_operation.initial_password | default('') }}"
-      no_log: true
 
     - name: Report Supabase project failure
       ansible.builtin.fail:

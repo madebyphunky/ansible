@@ -8,7 +8,7 @@ rather than triggering a blind mutation.
 
 | Role | Inputs | Public result |
 | --- | --- | --- |
-| `madebyphunky.supabase.project` | `supabase_organization`, `supabase_project_name`, creation `supabase_region`, optional `supabase_project_ref` | `supabase_project_result` |
+| `madebyphunky.supabase.project` | `supabase_organization`, `supabase_project_name`, creation `supabase_region` and `supabase_project_password`, optional `supabase_project_ref` | `supabase_project_result` |
 | `madebyphunky.supabase.auth` | `supabase_project_ref`, `supabase_auth_config` (path to config.toml) | `supabase_auth_result` |
 | `madebyphunky.supabase.migrations` | `supabase_project_ref`, `supabase_workdir` (application checkout), `SUPABASE_DB_PASSWORD` | `supabase_migrations_result` |
 
@@ -21,27 +21,37 @@ Node.js 20+ and npx through `supabase_node_executable` and
 Install sibling Collections with `python scripts/collection_tools.py install`
 from the repository root. Example composition: `playbooks/project.yml`.
 
-## Credentials and initial password
+## Credentials and creation password
 
 Every Role requires `SUPABASE_ACCESS_TOKEN` as an Ansible variable or controller
 environment variable. Migrations also require `SUPABASE_DB_PASSWORD`. Explicit
-Ansible variables take precedence; explicitly blank credentials fail. Credentials
-are redacted and passed through the child environment, except for the generated
-project creation password described below. No saved CLI login or local link is used.
+Ansible variables take precedence; explicitly blank credentials fail. No saved
+CLI login or local link is used.
 
-For a **new** Project the Role generates a random initial database password. It is
-available as the sensitive, non-cacheable fact `supabase_project_initial_password`,
-with `supabase_project_result.password_change_required: true`. Capture it into your
-secret manager using a `no_log: true` task, then change it in Supabase and update
-consumers. Never debug this fact or write it into a repository. The CLI requires
-this generated password in process arguments during creation, so it can briefly be
-visible to local process inspection; logs and public result facts omit it. This
-tradeoff applies to newly generated passwords only.
+For a **new** Project, supply `supabase_project_password` explicitly to the Role.
+There is no password generation or environment fallback for this input. For example,
+use an Ansible Vault variable as the source:
 
-The Role cannot recover or rotate an existing Project's password. The initial
-password fact is empty on adoption/repeat runs. After creating and before rotating,
-it can be passed directly to the migrations Role as `SUPABASE_DB_PASSWORD` under
-`no_log: true`. After rotation, supply the current password from your secret manager.
+```yaml
+- name: Ensure a hosted Project
+  ansible.builtin.include_role:
+    name: madebyphunky.supabase.project
+  vars:
+    supabase_organization: my-organization
+    supabase_project_name: my-project
+    supabase_region: eu-west-2
+    supabase_project_password: "{{ vault_supabase_password }}"
+```
+
+The password is marked `no_log` and is never returned in result facts. The CLI
+requires it in process arguments during creation, so it can briefly be visible
+to local process inspection. Other credentials use the child environment.
+
+An existing Project needs no password input. Supplying a different password does
+not rotate it. The Role cannot recover an existing Project's password. For
+migrations, pass the current password separately as `SUPABASE_DB_PASSWORD`; the
+example playbook maps both inputs from the same securely supplied variable.
+Never commit secret values or debug credential variables.
 
 ## Project ownership and readiness
 
@@ -55,7 +65,7 @@ Creation leaves compute and other unexposed options at CLI defaults.
 Poll the exact Project for `ACTIVE_HEALTHY`, with `supabase_timeout: 900` seconds
 and `supabase_poll_interval: 5` by default. Timeout or failure retains resources;
 there is no rollback or automatic creation retry. Nonsecret identities remain in
-the result when known; the initial password is preserved separately on partial
+the result when known; passwords are never returned, including on partial
 failure. If creation is indeterminate, inspect the selected organization before
 rerunning. No API keys or connection strings are retrieved.
 

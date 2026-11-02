@@ -50,9 +50,9 @@ environments and redacted rather than included in command arguments.
 
 Supabase Roles use `SUPABASE_ACCESS_TOKEN`; migrations also use
 `SUPABASE_DB_PASSWORD`, with explicit variables overriding controller environment
-values. New Projects receive a generated initial password in the sensitive
-`supabase_project_initial_password` fact; capture it securely and change it afterward.
-See [Supabase credential handling](collections/supabase/README.md#credentials-and-initial-password)
+values. New Projects require an explicit `supabase_project_password` Role input;
+there is no automatic password generation or creation-password environment fallback.
+See [Supabase credential handling](collections/supabase/README.md#credentials-and-creation-password)
 for the creation CLI process-argument tradeoff.
 
 Gandi uses `gandi_livedns_personal_access_token`, falling back to

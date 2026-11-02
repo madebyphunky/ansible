@@ -5,10 +5,13 @@
   gather_facts: false
   # Supply organization/name/region, auth config path, application workdir, and
   # tokens through inventory, extra vars, or the documented environment names.
+  # Supply database_password from a secret source such as Ansible Vault.
   tasks:
     - name: Ensure the hosted Project
       ansible.builtin.include_role:
         name: madebyphunky.supabase.project
+      vars:
+        supabase_project_password: "{{ database_password }}"
 
     - name: Select the Project for subsequent Roles
       ansible.builtin.set_fact:
@@ -20,16 +23,9 @@
         name: madebyphunky.supabase.auth
       when: not ansible_check_mode
 
-    # Preserve the official CLI credential variable shared by all Supabase Roles.
-    - name: Use the new initial password for this run's migrations # noqa var-naming[pattern]
-      ansible.builtin.set_fact:
-        SUPABASE_DB_PASSWORD: "{{ supabase_project_initial_password }}"
-      no_log: true
-      when:
-        - not ansible_check_mode
-        - supabase_project_initial_password | default('') | length > 0
-
     - name: Apply application migrations
       ansible.builtin.include_role:
         name: madebyphunky.supabase.migrations
+      vars:
+        SUPABASE_DB_PASSWORD: "{{ database_password }}"
       when: not ansible_check_mode

@@ -38,14 +38,15 @@ def supabase(installed, tmp_path):
         "ANSIBLE_SUPABASE_CONTRACT_STATE": str(state),
         "SUPABASE_ACCESS_TOKEN": "ambient-token-must-lose",
         "SUPABASE_AUTH_SITE_URL": "https://ambient-must-not-override.test",
+        "SUPABASE_DB_PASSWORD": "",
     }
     variables = {
         "SUPABASE_ACCESS_TOKEN": "dummy-explicit-token",
-        "SUPABASE_DB_PASSWORD": "dummy-db-password",
         "supabase_manage_prerequisites": False,
         "supabase_npx_executable": str(cli),
         "supabase_organization": "org-id",
         "supabase_project_name": "test-project",
+        "supabase_project_password": "caller-password-0123456789",
         "supabase_region": "eu-west-2",
         "supabase_auth_config": str(config),
         "supabase_workdir": str(checkout),
@@ -54,6 +55,8 @@ def supabase(installed, tmp_path):
 
     def run(role="project", overrides=None, **kwargs):
         supplied = variables | (overrides or {})
+        if role == "migrations":
+            supplied.setdefault("SUPABASE_DB_PASSWORD", "dummy-db-password")
         if role != "project":
             supplied.setdefault("supabase_project_ref", "testref")
         tasks = [
@@ -65,10 +68,10 @@ def supabase(installed, tmp_path):
         if role == "project":
             tasks.append(
                 {
-                    "name": "Verify generated password stays separate from the public result",
+                    "name": "Verify supplied password is never returned",
                     "ansible.builtin.assert": {
                         "that": [
-                            "not supabase_project_result.get('password_change_required', false) or supabase_project_initial_password | length >= 32",
+                            "supabase_project_initial_password is not defined",
                             "'initial_password' not in supabase_project_result",
                         ]
                     },
@@ -76,7 +79,7 @@ def supabase(installed, tmp_path):
             )
         return invoke(
             supplied,
-            env=env,
+            env=env | kwargs.pop("env_updates", {}),
             role="madebyphunky.supabase." + role,
             tasks_after=kwargs.pop("tasks_after", tasks),
             **kwargs
@@ -103,7 +106,7 @@ def project(**extra):
     } | extra
 
 
-def test_project_create_reuse_and_generated_password_redaction(supabase):
+def test_project_create_reuse_and_supplied_password_redaction(supabase):
     run, read, _, _, _ = supabase
     first = run(verbose=True)
     assert first.returncode == 0, first.stdout
@@ -224,7 +227,7 @@ def test_migration_history_conflict_never_attempts_apply(supabase):
     assert all("--dry-run" in call["args"] for call in read()["calls"])
 
 
-def test_create_failure_is_not_retried_and_preserves_secret_without_logging(supabase):
+def test_create_failure_is_not_retried_or_logged(supabase):
     run, read, write, _, _ = supabase
     write({"fail_after_create": True})
     result = run(verbose=True)
@@ -317,7 +320,7 @@ def test_composed_roles_pass_new_identity_and_password_without_logging(supabase)
             },
             "vars": {
                 "supabase_project_ref": "{{ supabase_project_result.project.ref }}",
-                "SUPABASE_DB_PASSWORD": "{{ supabase_project_initial_password }}",
+                "SUPABASE_DB_PASSWORD": "{{ supabase_project_password }}",
             },
         },
     ]
@@ -325,3 +328,58 @@ def test_composed_roles_pass_new_identity_and_password_without_logging(supabase)
     assert result.returncode == 0, result.stdout
     assert read()["password"] not in result.stdout
     assert read()["applied"] == ["20261102090000_widgets.sql"]
+
+
+def test_project_password_is_explicit_and_never_rotates_existing_project(supabase):
+    run, read, _, _, _ = supabase
+    password = "supplied-project-password-0123456789"
+    first = run(
+        overrides={"supabase_project_password": password},
+        env_updates={"SUPABASE_DB_PASSWORD": "ambient-password-must-not-be-used"},
+        verbose=True,
+    )
+    assert first.returncode == 0, first.stdout
+    assert read()["password"] == password
+    assert password not in first.stdout
+    second = run(
+        overrides={"supabase_project_password": "different-password-0123456789"}
+    )
+    assert second.returncode == 0, second.stdout
+    assert changed(second) == 0
+    assert read()["password"] == password
+    assert sum(call["operation"] == "projects create" for call in read()["calls"]) == 1
+
+
+@pytest.mark.parametrize("password", ["", "   "])
+def test_blank_creation_password_rejected_before_prerequisites(supabase, password):
+    run, read, _, _, _ = supabase
+    result = run(
+        overrides={
+            "supabase_project_password": password,
+            "supabase_manage_prerequisites": True,
+        }
+    )
+    assert result.returncode != 0
+    assert "must be nonblank" in result.stdout
+    assert "Ensure Node.js" not in result.stdout
+    assert read()["calls"] == []
+
+
+def test_missing_creation_password_never_generates_or_uses_environment(supabase):
+    run, read, _, _, _ = supabase
+    result = run(
+        overrides={"supabase_project_password": None},
+        env_updates={"SUPABASE_DB_PASSWORD": "environment-password-must-not-be-used"},
+    )
+    assert result.returncode != 0
+    assert "Supply supabase_project_password" in result.stdout
+    assert all(call["operation"] != "projects create" for call in read()["calls"])
+
+
+def test_adopting_existing_project_needs_no_password(supabase):
+    run, read, write, _, _ = supabase
+    write({"projects": [project()]})
+    result = run(overrides={"supabase_project_password": None})
+    assert result.returncode == 0, result.stdout
+    assert changed(result) == 0
+    assert all(call["operation"] != "projects create" for call in read()["calls"])

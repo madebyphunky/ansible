@@ -7,6 +7,10 @@ argument_specs:
         type: str
         no_log: true
         description: Access token; falls back to the controller environment of the same name.
+      supabase_project_password:
+        type: str
+        no_log: true
+        description: Explicit database password required for creation. No generation or environment fallback; never rotates existing Projects.
       supabase_cli_version:
         type: str
         description: npm Supabase CLI version or tag; defaults to latest.

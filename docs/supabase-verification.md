@@ -22,16 +22,18 @@ Live acceptance has not been run. Before treating the Roles as live-ready:
 
 1. Select an explicit disposable Supabase organization with appropriate capacity
    and provide a scoped access token through the environment or protected variables.
-2. Create a uniquely named Project in an explicit region. Capture its exact ref and
-   generated password securely; verify the password is absent from verbose output.
+2. Create a uniquely named Project in an explicit region, supplying
+   `supabase_project_password` from a secret source. Capture its exact ref and verify
+   the password is absent from verbose output and all result facts.
 3. Re-run the project Role and verify no additional Project or change is reported.
 4. Apply a site URL/redirect configuration, repeat without changes, and verify
    omitted Auth fields remain unchanged. Exercise a declared SMTP/OAuth secret
    against a provider configuration suitable for the disposable Project.
 5. Apply a versioned migration, rerun with zero changes, and test a history conflict.
    Check that application files and CLI link state are unchanged.
-6. Change the initial database password in Supabase, update the securely supplied
-   `SUPABASE_DB_PASSWORD`, and verify a subsequent migration run succeeds.
+6. Supply a different `supabase_project_password` on a repeat project run and verify
+   the Project password remains unchanged. Migrations must still use the original
+   current password through `SUPABASE_DB_PASSWORD`.
 7. Clean up only the exact Project created for the test, using the provider's tools.
    Deletion is deliberately outside these Roles.
 

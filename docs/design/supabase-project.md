@@ -34,18 +34,17 @@ remaining details by following the Supabase CLI.
 - Without a reference, exact organization/name lookup reuses one match, creates on
   zero matches, and fails on multiple matches.
 - Creation requires a region. Supplied region mismatches fail on existing Projects.
-- Generate a random initial database password for new Projects, return it as a
-  sensitive fact, and tell the caller to change it afterward. This supersedes the
-  earlier caller-supplied creation-password proposal.
-- The user selected generated-password CLI creation rather than the proposed API
-  exception: the generated password briefly appears in CLI process arguments,
-  while logs and nonsecret results omit it. Other credentials use the environment.
+- Require an explicit `supabase_project_password` Role input when creating a new
+  Project. There is no password generation or environment fallback for this input.
+- The CLI requires the creation password in process arguments. Mark it no_log,
+  suppress provider output that could echo it, and never return it in result facts.
+  Other credentials use the child environment.
 - Never rename, move, rotate passwords, delete, recreate, or automatically retry
   indeterminate creation. Existing Projects require no creation password.
 - Retain CLI defaults for unexposed creation options. Wait for `ACTIVE_HEALTHY`
   within a configurable 900-second budget, polling every five seconds by default.
-- Preserve nonsecret identities when known and the generated password separately
-  on partial failure. No rollback. Return ref, organization, name, region, status,
+- Preserve nonsecret identities when known on partial failure; never return
+  passwords. No rollback. Return ref, organization, name, region, status,
   and project URL; do not retrieve API keys or connection strings.
 
 ## Auth
