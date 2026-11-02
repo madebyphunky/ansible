@@ -58,7 +58,7 @@ def supabase(installed, tmp_path):
         if role == "migrations":
             supplied.setdefault("SUPABASE_DB_PASSWORD", "dummy-db-password")
         if role != "project":
-            supplied.setdefault("supabase_project_ref", "testref")
+            supplied.setdefault("supabase_project_ref", "abcdefghijabcdefghij")
         tasks = [
             {
                 "name": "Inspect nonsecret public result",
@@ -96,8 +96,8 @@ def supabase(installed, tmp_path):
 
 def project(**extra):
     return {
-        "ref": "testref",
-        "id": "testref",
+        "ref": "abcdefghijabcdefghij",
+        "id": "abcdefghijabcdefghij",
         "name": "test-project",
         "organization_id": "org-id",
         "organization_slug": "my-org",
@@ -125,22 +125,30 @@ def test_project_create_reuse_and_supplied_password_redaction(supabase):
     "rows,overrides,error",
     [
         (
-            [project(), project(ref="duplicate", id="duplicate")],
+            [
+                project(),
+                project(ref="duplicateduplicateab", id="duplicateduplicateab"),
+            ],
             {},
             "Multiple Projects",
         ),
         (
             [project(organization_id="other", organization_slug="other")],
-            {"supabase_project_ref": "testref"},
+            {"supabase_project_ref": "abcdefghijabcdefghij"},
             "different organization",
         ),
         ([project(region="us-east-1")], {}, "region differs"),
         (
             [project(name="other")],
-            {"supabase_project_ref": "testref"},
+            {"supabase_project_ref": "abcdefghijabcdefghij"},
             "different name",
         ),
-        ([], {"supabase_project_ref": "missing"}, "must resolve"),
+        ([], {"supabase_project_ref": "zzzzzzzzzzzzzzzzzzzz"}, "must resolve"),
+        (
+            [],
+            {"supabase_project_ref": "short"},
+            "20-character lowercase",
+        ),
     ],
 )
 def test_project_identity_conflicts_fail_without_creation(
@@ -156,9 +164,19 @@ def test_project_identity_conflicts_fail_without_creation(
 
 def test_explicit_ref_resolves_ambiguous_name_and_version_override(supabase):
     run, read, write, _, _ = supabase
-    write({"projects": [project(), project(ref="another", id="another")]})
+    write(
+        {
+            "projects": [
+                project(),
+                project(ref="anotherprojectrefab", id="anotherprojectrefab"),
+            ]
+        }
+    )
     result = run(
-        overrides={"supabase_project_ref": "testref", "supabase_cli_version": "3.0.0"}
+        overrides={
+            "supabase_project_ref": "abcdefghijabcdefghij",
+            "supabase_cli_version": "3.0.0",
+        }
     )
     assert result.returncode == 0, result.stdout
     assert changed(result) == 0
@@ -234,7 +252,7 @@ def test_create_failure_is_not_retried_or_logged(supabase):
     assert result.returncode != 0
     assert read()["password"] not in result.stdout
     assert sum(call["operation"] == "projects create" for call in read()["calls"]) == 1
-    assert read()["projects"][0]["ref"] == "testref"
+    assert read()["projects"][0]["ref"] == "abcdefghijabcdefghij"
 
 
 def test_project_readiness_timeout_retains_identity(supabase):
@@ -242,7 +260,7 @@ def test_project_readiness_timeout_retains_identity(supabase):
     write({"status": "COMING_UP"})
     result = run(overrides={"supabase_timeout": 3})
     assert result.returncode != 0
-    assert read()["projects"][0]["ref"] == "testref"
+    assert read()["projects"][0]["ref"] == "abcdefghijabcdefghij"
     assert "readiness timed out" in result.stdout
     assert read()["password"] not in result.stdout
 
@@ -252,6 +270,43 @@ def test_invalid_auth_toml_fails_before_cli(supabase):
     config.write_text("[auth\n")
     result = run("auth")
     assert result.returncode != 0
+    assert read()["calls"] == []
+
+
+def test_auth_content_path_files_are_staged(supabase):
+    run, read, _, config, _ = supabase
+    template = config.parent / "templates" / "invite.html"
+    template.parent.mkdir()
+    template.write_text("<h1>Invite</h1>")
+    config.write_text(
+        '[auth.email.template.invite]\nsubject = "Welcome"\n'
+        'content_path = "./templates/invite.html"\n'
+    )
+    result = run("auth")
+    assert result.returncode == 0, result.stdout
+    assert read()["staged_files"] == ["supabase/templates/invite.html"]
+    assert (
+        read()["staged_auth"]["auth"]["email"]["template"]["invite"]["content_path"]
+        == "./templates/invite.html"
+    )
+
+
+def test_missing_auth_content_path_fails_before_cli(supabase):
+    run, read, _, config, _ = supabase
+    config.write_text(
+        '[auth.email.template.invite]\ncontent_path = "./templates/missing.html"\n'
+    )
+    result = run("auth")
+    assert result.returncode != 0
+    assert "content_path file is missing" in result.stdout
+    assert read()["calls"] == []
+
+
+def test_invalid_project_ref_format_fails_before_cli(supabase):
+    run, read, _, _, _ = supabase
+    result = run("auth", overrides={"supabase_project_ref": "not-a-real-ref"})
+    assert result.returncode != 0
+    assert "20-character lowercase" in result.stdout
     assert read()["calls"] == []
 
 

@@ -109,6 +109,28 @@ class CliError(Exception):
     """A failure whose message cannot contain provider output or credentials."""
 
 
+PROJECT_REF = re.compile(r"^[a-z]{20}$")
+
+
+def require_project_ref(value):
+    if not PROJECT_REF.fullmatch(value or ""):
+        raise CliError(
+            "Supply an exact 20-character lowercase Supabase Project reference"
+        )
+    return value
+
+
+def content_paths(value, prefix=()):
+    """Yield Auth content_path values as (toml_path_tuple, relative_path)."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            yield from content_paths(item, prefix + (key,))
+    elif prefix and prefix[-1] == "content_path":
+        if not isinstance(value, str) or not value.strip():
+            raise CliError("Auth content_path values must be nonblank strings")
+        yield prefix, value
+
+
 def toml_value(value):
     """Encode parsed TOML values without evaluating strings or retaining other sections."""
     if isinstance(value, str):
@@ -160,6 +182,7 @@ class Supabase:
         self.changed = False
         self.deadline = time.monotonic() + self.p["timeout"]
         self.auth = None
+        self.auth_config_path = None
         self.directory = None
 
     def validate(self):
@@ -177,15 +200,18 @@ class Supabase:
                 raise CliError(
                     "supabase_project_password must be nonblank when supplied"
                 )
-        elif not (p["project_ref"] or "").strip():
-            raise CliError("Supply an explicit Project reference")
+            if p["project_ref"] is not None:
+                require_project_ref(p["project_ref"])
+        else:
+            require_project_ref(p["project_ref"])
         if p["operation"] == "auth":
             try:
                 import tomllib
             except ImportError:
                 raise CliError("Auth requires Python 3.11 or later") from None
             try:
-                with open(p["config_path"] or "", "rb") as stream:
+                self.auth_config_path = Path(p["config_path"] or "").resolve()
+                with open(self.auth_config_path, "rb") as stream:
                     config = tomllib.load(stream)
             except (OSError, ValueError):
                 raise CliError(
@@ -194,12 +220,45 @@ class Supabase:
             self.auth = config.get("auth")
             if not isinstance(self.auth, dict) or not self.auth:
                 raise CliError("Supply at least one explicit Auth setting")
+            for _, relative in content_paths(self.auth):
+                self.resolve_content_source(relative)
         if p["operation"] == "migrations":
             if not (p["db_password"] or "").strip():
                 raise CliError("Supply SUPABASE_DB_PASSWORD for migrations")
             source = Path(p["workdir"] or "") / "supabase" / "migrations"
             if not source.is_dir():
                 raise CliError("Application checkout must contain supabase/migrations")
+
+    def resolve_content_source(self, relative):
+        """Locate a declared Auth content_path under the caller's config roots."""
+        if Path(relative).is_absolute():
+            raise CliError("Auth content_path values must be relative paths")
+        config_dir = self.auth_config_path.parent.resolve()
+        project_root = config_dir.parent
+        for root, under_supabase in ((project_root, False), (config_dir, True)):
+            source = (root / relative).resolve()
+            if not source.is_file() or (
+                root not in source.parents and source.parent != root
+            ):
+                continue
+            return source, under_supabase
+        raise CliError("Auth content_path file is missing: " + relative)
+
+    def stage_auth_files(self):
+        """Stage Auth-only TOML plus any referenced email-template content files."""
+        workdir = Path(self.directory).resolve()
+        (workdir / "supabase" / "config.toml").write_text(auth_toml(self.auth))
+        for _, relative in content_paths(self.auth):
+            source, under_supabase = self.resolve_content_source(relative)
+            destination = (
+                workdir / "supabase" / relative
+                if under_supabase
+                else workdir / relative
+            ).resolve()
+            if workdir not in destination.parents:
+                raise CliError("Auth content_path escapes the isolated workdir")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
 
     def cli(self, args, allowed=(0,)):
         remaining = self.deadline - time.monotonic()
@@ -400,9 +459,7 @@ class Supabase:
             self.publish_project(row)
 
     def auth_config(self):
-        (Path(self.directory) / "supabase" / "config.toml").write_text(
-            auth_toml(self.auth)
-        )
+        self.stage_auth_files()
         output, _ = self.cli(
             [
                 "config",

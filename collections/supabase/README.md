@@ -3,8 +3,10 @@
 Three independently runnable Roles for hosted Supabase, using
 `npx --yes supabase@latest`. Set `supabase_cli_version` to an explicit version
 when required. The first version follows the CLI v3 command and JSON contracts;
-older versions are unsupported. A future incompatible `latest` response fails
-rather than triggering a blind mutation.
+older versions are unsupported. Structured responses are validated against that
+contract. Diff and dry-run responses are rejected before mutation, but some
+incompatible create/push responses can only be detected afterward; those failures
+retain any partial provider changes for inspection rather than retrying blindly.
 
 | Role | Inputs | Public result |
 | --- | --- | --- |
@@ -74,10 +76,12 @@ rerunning. No API keys or connection strings are retrieved.
 Supply a Supabase `config.toml`. Only its explicitly declared `[auth]` settings
 and nested Auth tables are staged. CLI-supported settings, including SMTP/OAuth,
 are accepted; omitted remote settings remain unchanged. An empty array explicitly
-clears a list. The Role compares with `config diff`, ignores remote-only fields,
-and uses `config push` when required. Declared masked secrets are checked by
-`config push` using the CLI's digest comparison, preserving repeat-run idempotency.
-Unsupported, missing, gated, or unapplied settings fail rather than count as success.
+clears a list. Declared Auth `content_path` files are copied into the isolated
+workdir; missing or absolute paths fail before the CLI runs. The Role compares
+with `config diff`, ignores remote-only fields, and uses `config push` when
+required. Declared masked secrets are checked by `config push` using the CLI's
+digest comparison, preserving repeat-run idempotency. Unsupported, missing,
+gated, or unapplied settings fail rather than count as success.
 
 The application file is never modified. Temporary files live in a private directory
 and are removed afterward. Use `env(NAME)` references for Auth secrets, with those
@@ -85,6 +89,8 @@ environment variables on the execution host. Ambient `SUPABASE_*` variables are
 removed from child processes except explicit access token/database password and
 the isolated CLI home, to prevent CLI environment overlays changing ownership.
 Use other environment names for Auth secret references.
+
+Project references must be the exact 20-character lowercase Supabase ref.
 
 ## Migrations
 
@@ -108,6 +114,7 @@ validation also runs before prerequisite installation in normal mode.
 
 Installed-Role contract tests use a stateful CLI double matching official v3
 structured responses. They cover adoption, ambiguity, region conflicts, secret
-redaction, sparse Auth ownership, migrations, check mode, and partial failures.
-Live provider acceptance has **not** been run for this first version; these tests
-do not establish live readiness. See the repository's Supabase verification notes.
+redaction, sparse Auth ownership, content_path staging, migrations, check mode,
+and partial failures. The Molecule live scenario and protected workflow exist,
+but live provider acceptance has **not** been run yet; contract tests do not
+establish live readiness. See the repository's Supabase verification notes.

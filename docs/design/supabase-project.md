@@ -140,16 +140,14 @@ These criteria apply to the entire feature, not just individual Role task files.
 
 ### Current gaps
 
-The public Roles, packaging, examples, documentation, and simulated CLI contract
-suite exist. The executable Supabase Molecule scenario, protected live workflow,
-cleanup harness/tests, and successful hosted acceptance evidence are missing.
-Supported-version CI failures must also be resolved before feature readiness.
-The implementation review also requires exact Project-reference validation with
-realistic fixtures, staging files referenced by Auth email-template/notification
-`content_path` settings, and correcting compatibility documentation that promises
-incompatible responses are always detected before mutation. Some response failures
-can only be detected after a create/push, so partial-mutation reporting and recovery
-must remain explicit.
+The public Roles, packaging, examples, documentation, simulated CLI contract
+suite, Molecule live scenario, protected workflow, and credential-free cleanup
+harness tests exist. Exact Project-reference validation, realistic fixtures, Auth
+`content_path` staging, and corrected compatibility wording are included.
+
+Successful hosted acceptance evidence is still missing: run the protected
+`supabase-test` workflow (or an equivalent local Molecule live run) and record
+commit, resolved CLI version, cases, and verified cleanup before readiness.
 See `docs/supabase-verification.md` for the required acceptance procedure.
 
 ## CLI contract sources

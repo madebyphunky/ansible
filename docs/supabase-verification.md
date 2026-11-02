@@ -25,8 +25,33 @@ This checks command availability, not hosted service behavior.
 Follow the existing Gandi/Vercel pattern: a separate Molecule scenario and a
 manually triggered workflow backed by a protected GitHub Actions environment.
 These are acceptance requirements for the complete hosted Supabase feature.
-The Supabase scenario, workflow, and cleanup harness are not implemented yet.
-Live acceptance has not been run; the feature is not live-ready.
+
+Implemented delivery:
+
+- Molecule scenario: `extensions/molecule/supabase`
+- Acceptance script: `tests/live_supabase_acceptance.py`
+- Credential-free cleanup guards: `tests/test_live_supabase_harness.py`
+- Protected workflow: `.github/workflows/live-supabase.yml` (`workflow_dispatch`,
+  environment `supabase-test`, concurrency group `supabase-acceptance`,
+  `always()` cleanup, failure manifest artifact)
+
+Live provider acceptance has not been run yet; the feature is not live-ready
+until a successful protected run including verified cleanup is recorded.
+
+### Protected configuration
+
+| Kind | Name | Meaning |
+| --- | --- | --- |
+| Secret | `SUPABASE_ACCESS_TOKEN` | Token permitted to inspect/create/configure/delete Projects in the disposable Organization. |
+| Secret | `SUPABASE_TEST_PASSWORD` | Creation password passed as `supabase_project_password` and reused as `SUPABASE_DB_PASSWORD`. |
+| Secret | `SUPABASE_TEST_SMTP_PASS` | Optional disposable SMTP password for declared Auth secret coverage. |
+| Variable | `SUPABASE_TEST_ORGANIZATION` | Explicit disposable Organization id or slug. |
+| Variable | `SUPABASE_TEST_REGION` | Explicit creation region. |
+
+```sh
+MOLECULE_GLOB='extensions/molecule/*/molecule.yml' molecule test -s supabase
+MOLECULE_GLOB='extensions/molecule/*/molecule.yml' molecule cleanup -s supabase
+```
 
 The scenario must invoke the installed public Roles, observe real provider state,
 and include Molecule idempotence. Ordinary PR jobs remain credential-free. Reuse

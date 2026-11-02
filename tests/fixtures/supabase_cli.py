@@ -49,8 +49,8 @@ if operation == "projects create":
     assert args[args.index("--org-id") + 1] == "my-org"
     assert state["password"]
     row = {
-        "id": "testref",
-        "ref": "testref",
+        "id": "abcdefghijabcdefghij",
+        "ref": "abcdefghijabcdefghij",
         "name": args[2],
         "organization_id": "org-id",
         "organization_slug": "my-org",
@@ -62,11 +62,16 @@ if operation == "projects create":
         finish(code=1)
     finish(row)
 
-assert "--remote=testref" in args
+assert "--remote=abcdefghijabcdefghij" in args
 if operation.startswith("config "):
     config = tomllib.loads(Path("supabase/config.toml").read_text())
     assert set(config) == {"auth"}, "non-Auth config escaped role ownership"
     state["staged_auth"] = config
+    staged = []
+    for staged_path in sorted(Path("supabase").rglob("*")):
+        if staged_path.is_file() and staged_path.as_posix() != "supabase/config.toml":
+            staged.append(staged_path.as_posix())
+    state["staged_files"] = staged
 
     def flatten(value, prefix=()):
         fields = {}
@@ -114,7 +119,7 @@ if operation.startswith("config "):
         finish(
             {
                 "schema_version": 1,
-                "target": {"project_ref": "testref"},
+                "target": {"project_ref": "abcdefghijabcdefghij"},
                 "counts": counts | {"total": len(changes)},
                 "changes": changes,
                 "scope": {
@@ -142,7 +147,7 @@ if operation.startswith("config "):
     finish(
         {
             "schema_version": 1,
-            "project_ref": "testref",
+            "project_ref": "abcdefghijabcdefghij",
             "services": [
                 {
                     "service": "auth",
@@ -186,7 +191,7 @@ if operation == "db push":
             "migrations": pending,
             "seeds": [],
             "roles": [],
-            "target": {"kind": "linked", "project_ref": "testref"},
+            "target": {"kind": "linked", "project_ref": "abcdefghijabcdefghij"},
             "message": "Finished supabase db push.",
         }
     )
