@@ -325,3 +325,56 @@ def test_recovery_confirms_inventory_absence_when_deleted_ref_returns_403(monkey
     monkeypatch.setattr(live, "request", request)
     live.recover_confirmed_project(data, ref)
     assert state["row"] is None
+
+
+def test_unset_fixture_path_initializes_auth_and_migrations(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("SUPABASE_TEST_SMTP_PASS", raising=False)
+    data = manifest()
+    root = live.fixture_dir(data)
+    assert root != tmp_path
+    assert (root / "supabase/config.toml").is_file()
+    assert (root / "supabase/migrations/20261102190000_widgets.sql").is_file()
+    assert data["fixture_dir"] == str(root)
+    assert live.fixture_dir(data) == root
+
+
+def test_live_verification_does_not_skip_database_permission_failure(
+    tmp_path, monkeypatch
+):
+    import subprocess
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("SUPABASE_ACCESS_TOKEN", "dummy-token")
+    monkeypatch.setenv("SUPABASE_TEST_PASSWORD", "dummy-password")
+    monkeypatch.delenv("SUPABASE_TEST_SMTP_PASS", raising=False)
+    data = manifest()
+    ref = data["projects"][data["main"]]
+    path = tmp_path / "manifest.json"
+    live.save(path, data)
+    monkeypatch.setattr(live, "capture", lambda *_: None)
+    monkeypatch.setattr(live, "project", lambda *_: {"ref": ref})
+    monkeypatch.setattr(
+        live,
+        "run_role",
+        lambda *_args, **_kwargs: {"project": {"ref": ref, "status": "ACTIVE_HEALTHY"}},
+    )
+    monkeypatch.setattr(
+        live,
+        "invoke",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess([], 1, stdout="conflict"),
+    )
+    monkeypatch.setattr(
+        live.subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess(
+            [], 0, stdout="3.0.0", stderr=""
+        ),
+    )
+
+    def denied(*_):
+        raise RuntimeError("supabase query returned HTTP 403")
+
+    monkeypatch.setattr(live, "sql", denied)
+    with pytest.raises(RuntimeError, match="HTTP 403"):
+        live.verify(path, data)

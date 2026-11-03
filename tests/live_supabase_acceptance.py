@@ -266,11 +266,16 @@ def prepare(path):
 
 
 def fixture_dir(manifest):
-    root = Path(manifest["fixture_dir"] or "")
-    if not root.exists():
-        root = Path(".cache/supabase-live/fixtures") / manifest["main"]
-        root.mkdir(parents=True, exist_ok=True)
-        (root / "supabase" / "migrations").mkdir(parents=True)
+    stored = manifest.get("fixture_dir")
+    root = (
+        Path(stored)
+        if stored
+        else Path(".cache/supabase-live/fixtures") / manifest["main"]
+    )
+    if not stored or not root.exists():
+        root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        root.chmod(0o700)
+        (root / "supabase" / "migrations").mkdir(parents=True, exist_ok=True)
         (root / "supabase" / "migrations" / "20261102190000_widgets.sql").write_text(
             "create table public.widgets (id int primary key);\n"
         )
@@ -290,6 +295,7 @@ def fixture_dir(manifest):
                 'admin_email = "acceptance@example.test"\n'
                 'sender_name = "Acceptance"\n'
             )
+            auth.chmod(0o600)
             manifest["auth_secret_config"] = str(auth)
         manifest["fixture_dir"] = str(root)
         manifest["auth_config"] = str(root / "supabase" / "config.toml")
@@ -348,12 +354,8 @@ def verify(path, manifest):
         "supabase_workdir": manifest["fixture_dir"],
     }
     run_role(path, manifest, MIGRATIONS, migration_vars)
-    try:
-        rows = sql(manifest, ref, "select to_regclass('public.widgets') as relation")
-        assert rows and "widgets" in json.dumps(rows), rows
-    except RuntimeError as error:
-        if "HTTP 404" not in str(error) and "HTTP 403" not in str(error):
-            raise
+    rows = sql(manifest, ref, "select to_regclass('public.widgets') as relation")
+    assert rows and "widgets" in json.dumps(rows), rows
     run_role(path, manifest, MIGRATIONS, migration_vars, expected_changes=0)
     conflict = Path(manifest["fixture_dir"]) / "supabase/migrations"
     (conflict / "20261101190000_conflict.sql").write_text(
