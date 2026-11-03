@@ -1,5 +1,5 @@
 ---
-# Four independently packaged Collections share this repository's tests and CI.
+# Independently packaged Collections share this repository's tests and CI.
 exclude_paths:
   - .cache/
   - .ansible/

@@ -1,0 +1,31 @@
+---
+- name: Compose hosted Supabase infrastructure
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  # Supply organization/name/region, auth config path, application workdir, and
+  # tokens through inventory, extra vars, or the documented environment names.
+  # Supply database_password from a secret source such as Ansible Vault.
+  tasks:
+    - name: Ensure the hosted Project
+      ansible.builtin.include_role:
+        name: madebyphunky.supabase.project
+      vars:
+        supabase_project_password: "{{ database_password }}"
+
+    - name: Select the Project for subsequent Roles
+      ansible.builtin.set_fact:
+        supabase_project_ref: "{{ supabase_project_result.project.ref }}"
+      when: not ansible_check_mode
+
+    - name: Configure Auth
+      ansible.builtin.include_role:
+        name: madebyphunky.supabase.auth
+      when: not ansible_check_mode
+
+    - name: Apply application migrations
+      ansible.builtin.include_role:
+        name: madebyphunky.supabase.migrations
+      vars:
+        SUPABASE_DB_PASSWORD: "{{ database_password }}"
+      when: not ansible_check_mode

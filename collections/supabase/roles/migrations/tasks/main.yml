@@ -1,0 +1,44 @@
+---
+- name: Validate and converge Supabase migrations
+  block:
+    - name: Validate inputs before installing prerequisites
+      madebyphunky.supabase.operation: &operation_parameters
+        operation: migrations
+        access_token: "{{ SUPABASE_ACCESS_TOKEN | default(lookup('ansible.builtin.env', 'SUPABASE_ACCESS_TOKEN')) }}"
+        project_ref: "{{ supabase_project_ref | default(omit) }}"
+        cli_version: "{{ supabase_cli_version }}"
+        npx_executable: "{{ nodejs_runtime.npx_path | default(supabase_npx_executable) if supabase_manage_prerequisites else supabase_npx_executable }}"
+        node_executable: "{{ nodejs_runtime.node_path | default(supabase_node_executable) if supabase_manage_prerequisites else supabase_node_executable }}"
+        timeout: "{{ supabase_timeout }}"
+        poll_interval: "{{ supabase_poll_interval }}"
+        workdir: "{{ supabase_workdir }}"
+        db_password: "{{ SUPABASE_DB_PASSWORD | default(lookup('ansible.builtin.env', 'SUPABASE_DB_PASSWORD')) }}"
+      args:
+        validate_only: true
+      no_log: true
+      changed_when: false
+      register: _supabase_migrations_operation
+
+    - name: Ensure Node.js and npx are available
+      ansible.builtin.include_role:
+        name: madebyphunky.nodejs.setup
+      when: supabase_manage_prerequisites
+
+    - name: Converge hosted Supabase migrations
+      madebyphunky.supabase.operation: *operation_parameters
+      no_log: true
+      register: _supabase_migrations_operation
+
+    - name: Publish Supabase migrations result
+      ansible.builtin.set_fact:
+        supabase_migrations_result: "{{ _supabase_migrations_operation.result }}"
+  rescue:
+    - name: Preserve partial Supabase migrations result
+      ansible.builtin.set_fact:
+        supabase_migrations_result: "{{ _supabase_migrations_operation.result | default({}) }}"
+
+    - name: Report Supabase migrations failure
+      ansible.builtin.fail:
+        msg: >-
+          {{ _supabase_migrations_operation.msg |
+              default('Supabase prerequisite setup failed; see failing task') }}

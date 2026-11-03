@@ -28,6 +28,14 @@ _Avoid_: full-zone sync, wipe-and-replace, unmanaged delete
 Gandi bearer credential for LiveDNS (`Authorization: Bearer …`). The only auth the Gandi LiveDNS Role accepts.
 _Avoid_: API key, Apikey
 
+**Application**:
+The product being built, with source hosted on GitHub, frontend on Vercel, and backend on Supabase.
+_Avoid_: project (when referring to the whole product rather than a provider Project)
+
+**Infrastructure setup**:
+Creating or linking the GitHub repository, Vercel Project, and Supabase Project for an Application. It can complete before application source exists.
+_Avoid_: project creation, Deployment, scaffolding
+
 **Vercel Project**:
 An application container within an explicitly selected Vercel account or team. It can exist without a Deployment or application source.
 _Avoid_: Deployment (when referring to the Project itself)
@@ -35,3 +43,15 @@ _Avoid_: Deployment (when referring to the Project itself)
 **Deployment**:
 A published version of an application's source within a Vercel Project, associated with a deployment URL. A production Deployment is the version published for production use.
 _Avoid_: Project (when referring to a published version)
+
+**Supabase Project**:
+A hosted Supabase environment containing a Postgres database and associated backend services within a Supabase organization.
+_Avoid_: self-hosted stack, local development stack, database (when referring to the whole Project)
+
+**Supabase Organization**:
+The hosted Supabase account boundary containing Supabase Projects.
+_Avoid_: Project, team (when referring to the Supabase ownership boundary)
+
+**Project reference**:
+Supabase's stable identifier for a hosted Supabase Project, distinct from its display name.
+_Avoid_: project name (when selecting an exact existing Supabase Project)

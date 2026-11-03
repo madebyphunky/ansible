@@ -1,0 +1,31 @@
+---
+- name: Converge an isolated hosted Supabase Project
+  hosts: localhost
+  gather_facts: false
+  vars:
+    supabase_live_manifest_path: >-
+      {{ lookup('ansible.builtin.env', 'SUPABASE_TEST_MANIFEST') |
+         default(lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/.cache/supabase-live/run.json', true) }}
+    supabase_live_manifest: "{{ lookup('ansible.builtin.file', supabase_live_manifest_path) | from_json }}"
+  tasks:
+    - name: Converge and retain confirmed creation identity
+      block:
+        - name: Invoke the public Supabase project Role
+          ansible.builtin.include_role:
+            name: madebyphunky.supabase.project
+          vars:
+            SUPABASE_ACCESS_TOKEN: "{{ lookup('ansible.builtin.env', 'SUPABASE_ACCESS_TOKEN') }}"
+            supabase_organization: "{{ supabase_live_manifest.organization }}"
+            supabase_project_name: "{{ supabase_live_manifest.main }}"
+            supabase_region: "{{ supabase_live_manifest.region }}"
+            supabase_project_password: "{{ lookup('ansible.builtin.env', 'SUPABASE_TEST_PASSWORD') }}"
+      always:
+        - name: Persist the nonsecret provider creation receipt
+          ansible.builtin.command:
+            argv:
+              - "{{ ansible_playbook_python }}"
+              - "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/tests/live_supabase_acceptance.py"
+              - record
+              - "{{ supabase_live_manifest_path }}"
+              - "{{ supabase_project_result | default({}) | to_json }}"
+          changed_when: false

@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: madebyphunky
+  description: Manage hosted Supabase migrations through the Supabase CLI.
+  license: MIT
+  min_ansible_version: '2.18'
+dependencies: []

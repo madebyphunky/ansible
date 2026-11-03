@@ -1,0 +1,14 @@
+---
+namespace: madebyphunky
+name: supabase
+version: 0.1.0
+readme: README.md
+authors: [madebyphunky]
+description: Hosted Supabase Projects, Auth configuration, and database migrations.
+license: [MIT]
+tags: [cloud, database, supabase]
+repository: https://github.com/madebyphunky/ansible
+issues: https://github.com/madebyphunky/ansible/issues
+dependencies:
+  madebyphunky.nodejs: ">=0.2.0"
+build_ignore: [.cache, .ansible, '*.tar.gz']

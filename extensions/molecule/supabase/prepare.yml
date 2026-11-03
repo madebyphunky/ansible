@@ -1,0 +1,17 @@
+---
+- name: Prepare isolated Supabase fixtures
+  hosts: localhost
+  gather_facts: false
+  vars:
+    supabase_live_manifest: >-
+      {{ lookup('ansible.builtin.env', 'SUPABASE_TEST_MANIFEST') |
+         default(lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/.cache/supabase-live/run.json', true) }}
+  tasks:
+    - name: Prepare only exact test-owned resource identities
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/tests/live_supabase_acceptance.py"
+          - prepare
+          - "{{ supabase_live_manifest }}"
+      changed_when: false
