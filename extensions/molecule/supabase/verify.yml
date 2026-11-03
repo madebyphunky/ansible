@@ -15,3 +15,8 @@
           - verify
           - "{{ supabase_live_manifest }}"
       changed_when: false
+      register: supabase_live_verification
+
+    - name: Record the nonsecret acceptance summary and tested versions
+      ansible.builtin.debug:
+        msg: "{{ supabase_live_verification.stdout }}"
