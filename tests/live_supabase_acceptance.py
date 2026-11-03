@@ -272,6 +272,7 @@ def fixture_dir(manifest):
         if stored
         else Path(".cache/supabase-live/fixtures") / manifest["main"]
     )
+    root = root.resolve()
     if not stored or not root.exists():
         root.mkdir(parents=True, exist_ok=True, mode=0o700)
         root.chmod(0o700)

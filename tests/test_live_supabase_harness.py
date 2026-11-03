@@ -378,3 +378,18 @@ def test_live_verification_does_not_skip_database_permission_failure(
     monkeypatch.setattr(live, "sql", denied)
     with pytest.raises(RuntimeError, match="HTTP 403"):
         live.verify(path, data)
+
+
+def test_fixture_paths_work_from_ansible_execution_directory(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("SUPABASE_TEST_SMTP_PASS", raising=False)
+    data = manifest()
+    root = live.fixture_dir(data)
+    execution = tmp_path / "ansible-home"
+    execution.mkdir()
+    monkeypatch.chdir(execution)
+    assert root.is_absolute()
+    assert Path(data["auth_config"]).is_file()
+    assert (Path(data["fixture_dir"]) / "supabase/migrations").is_dir()
