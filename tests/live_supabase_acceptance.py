@@ -427,7 +427,21 @@ def cleanup(path, manifest):
 def recover_confirmed_project(manifest, ref):
     """Operator-authorized recovery of one exact ref; never infer deletion authority."""
     assert re.fullmatch(r"[a-z]{20}", ref), "Invalid confirmed Project reference"
-    current = project_by_ref(ref)
+
+    def current_project():
+        inventory = projects()
+        rows = [row for row in inventory if (row.get("ref") or row.get("id")) == ref]
+        assert len(rows) <= 1, "Ambiguous recovery reference"
+        if not rows:
+            assert not any(
+                row.get("name") in manifest["projects"]
+                and manifest["organization_id"]
+                in (row.get("organization_id"), row.get("organization_slug"))
+                for row in inventory
+            ), "Allocated recovery name has another reference; refusing recovery"
+        return rows[0] if rows else None
+
+    current = current_project()
     if current is None:
         print("Confirmed recovery Project is already absent")
         return
@@ -443,7 +457,9 @@ def recover_confirmed_project(manifest, ref):
     ), "Recovery Organization mismatch"
     request("/v1/projects/" + ref, "DELETE")
     deadline = time.monotonic() + 60
-    while project_by_ref(ref) is not None:
+    # A scoped token may receive 403 for GET-by-ref after successful deletion.
+    # Require a successful inventory read; never interpret 403 itself as absence.
+    while current_project() is not None:
         if time.monotonic() >= deadline:
             raise RuntimeError(
                 "Recovery deletion not confirmed; retain source manifest"

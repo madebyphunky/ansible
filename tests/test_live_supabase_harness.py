@@ -259,7 +259,9 @@ def test_operator_recovery_deletes_only_the_confirmed_ref(monkeypatch):
             "organization_id": data["organization_id"],
         }
     }
-    monkeypatch.setattr(live, "project_by_ref", lambda value: state["project"])
+    monkeypatch.setattr(
+        live, "projects", lambda: [state["project"]] if state["project"] else []
+    )
     calls = []
 
     def request(endpoint, method="GET", body=None):
@@ -287,9 +289,39 @@ def test_operator_recovery_rejects_identity_mismatch(monkeypatch, field, value):
         "organization_id": data["organization_id"],
     }
     row[field] = value
-    monkeypatch.setattr(live, "project_by_ref", lambda *_: row)
+    monkeypatch.setattr(live, "projects", lambda: [row])
     monkeypatch.setattr(
         live, "request", lambda *_: pytest.fail("Deletion must not occur")
     )
     with pytest.raises(AssertionError):
         live.recover_confirmed_project(data, "abcdefghijabcdefghij")
+
+
+def test_recovery_confirms_inventory_absence_when_deleted_ref_returns_403(monkeypatch):
+    data = manifest()
+    ref = "abcdefghijabcdefghij"
+    state = {
+        "row": {
+            "ref": ref,
+            "name": data["main"],
+            "organization_id": data["organization_id"],
+        }
+    }
+
+    def by_ref(_):
+        if state["row"] is None:
+            raise RuntimeError("supabase GET project returned HTTP 403")
+        return state["row"]
+
+    monkeypatch.setattr(live, "project_by_ref", by_ref)
+    monkeypatch.setattr(
+        live, "projects", lambda: [state["row"]] if state["row"] else []
+    )
+
+    def request(endpoint, method="GET", body=None):
+        assert (endpoint, method) == ("/v1/projects/" + ref, "DELETE")
+        state["row"] = None
+
+    monkeypatch.setattr(live, "request", request)
+    live.recover_confirmed_project(data, ref)
+    assert state["row"] is None
