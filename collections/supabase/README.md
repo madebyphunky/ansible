@@ -116,5 +116,6 @@ Installed-Role contract tests use a stateful CLI double matching official v3
 structured responses. They cover adoption, ambiguity, region conflicts, secret
 redaction, sparse Auth ownership, content_path staging, migrations, check mode,
 and partial failures. The Molecule live scenario and protected workflow exist,
-but live provider acceptance has **not** been run yet; contract tests do not
-establish live readiness. See the repository's Supabase verification notes.
+and protected live acceptance passed on 2026-11-03 with Supabase CLI 3.0.0,
+including verified cleanup. See [verification evidence](../../docs/supabase-verification.md)
+for the tested commit, coverage, versions, and limitations.

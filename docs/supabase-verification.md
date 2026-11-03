@@ -35,8 +35,8 @@ Implemented delivery:
   environment `supabase-test`, concurrency group `supabase-acceptance`,
   `always()` cleanup, failure manifest artifact)
 
-Live provider acceptance has not been run yet; the feature is not live-ready
-until a successful protected run including verified cleanup is recorded.
+Protected live acceptance passed on 2026-11-03, including verified final cleanup.
+The tested commit, versions, coverage, and evidence are recorded below.
 
 ### Protected configuration
 
@@ -144,3 +144,31 @@ leave acceptance pending.
 
 Never commit credentials, passwords, application secrets, or raw provider output
 as test evidence. A skipped live run does not count as passing.
+
+## Recorded protected acceptance: 2026-11-03
+
+[GitHub Actions run 41639970133](https://github.com/madebyphunky/ansible/actions/runs/41639970133)
+passed against commit `9f6cb91e7a1793859a929d07f4b5ce1c4f80a14d` in the
+`supabase-test` environment. The run used Supabase CLI **3.0.0**, Node.js
+**26.13.0**, Python **3.12.15**, Ansible Core **2.19.15**, and Molecule **25.12.0**.
+The regular PR matrix also passed Ansible Core 2.18 and 2.19 checks on this commit.
+
+Passed: hosted Project creation/readiness, explicit-reference adoption, unchanged
+Molecule idempotence, creation-password changes without database password rotation,
+Auth configuration with provider readback and omitted-field preservation, declared SMTP secret configuration
+and repeat runs, SQL migration application with database-effect verification,
+unchanged repeat migrations, history-conflict rejection, mutation-free check mode,
+and unrelated sentinel preservation. Final exact-reference cleanup and the
+workflow's additional cleanup invocation both succeeded; no recovery manifest
+remained for this run. This is protected-CI evidence, not a local live run.
+
+Earlier failed runs exposed timestamp-based ownership assumptions, missing fixture
+initialization, relative fixture paths, and deletion verification using a scoped
+GET that returned 403 after DELETE. Regression tests and the receipt-based recovery
+logic address those failures. The initially retained sentinel was recovered through
+an explicitly operator-approved exact-reference action before subsequent tests.
+
+The SMTP fixture proves configuration and secret convergence, not real email
+delivery. End-user OAuth login, other regions, self-hosting, and every possible Auth
+setting were not exercised. Later documentation-only commits do not change the
+provider behaviour tested here; relevant Role/CLI changes require renewed evidence.

@@ -83,5 +83,6 @@ See [Gandi live verification](docs/live-verification.md) and
 passed for both on 2026-11-02, including verified cleanup. Missing credentials
 never count as a passing live run.
 
-Supabase first-version contracts use an isolated CLI double; live provider acceptance
-has not been run. See [Supabase verification](docs/supabase-verification.md).
+Supabase contracts use an isolated CLI double. Protected live acceptance passed
+on 2026-11-03, including verified cleanup. See [Supabase verification](docs/supabase-verification.md)
+for the tested commit, versions, coverage, and limitations.

@@ -138,17 +138,18 @@ These criteria apply to the entire feature, not just individual Role task files.
 - Keep local evidence distinct from protected-CI evidence. No skipped run counts
   as a successful live run.
 
-### Current gaps
+### Delivery evidence
 
 The public Roles, packaging, examples, documentation, simulated CLI contract
 suite, Molecule live scenario, protected workflow, and credential-free cleanup
 harness tests exist. Exact Project-reference validation, realistic fixtures, Auth
 `content_path` staging, and corrected compatibility wording are included.
 
-Successful hosted acceptance evidence is still missing: run the protected
-`supabase-test` workflow (or an equivalent local Molecule live run) and record
-commit, resolved CLI version, cases, and verified cleanup before readiness.
-See `docs/supabase-verification.md` for the required acceptance procedure.
+Protected live acceptance passed on 2026-11-03 against commit
+`9f6cb91e7a1793859a929d07f4b5ce1c4f80a14d` using Supabase CLI 3.0.0, including
+verified cleanup. The supported-version PR checks also passed on that commit.
+See `docs/supabase-verification.md` for the linked run, exact versions, coverage,
+limitations, and requirements for renewing evidence after behaviour changes.
 
 ## CLI contract sources
 
