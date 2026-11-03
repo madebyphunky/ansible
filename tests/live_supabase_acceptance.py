@@ -424,6 +424,34 @@ def cleanup(path, manifest):
     path.unlink()
 
 
+def recover_confirmed_project(manifest, ref):
+    """Operator-authorized recovery of one exact ref; never infer deletion authority."""
+    assert re.fullmatch(r"[a-z]{20}", ref), "Invalid confirmed Project reference"
+    current = project_by_ref(ref)
+    if current is None:
+        print("Confirmed recovery Project is already absent")
+        return
+    assert (
+        current.get("ref") or current.get("id")
+    ) == ref, "Recovery reference mismatch"
+    assert (
+        current.get("name") in manifest["projects"]
+    ), "Recovery Project name was not allocated"
+    assert manifest["organization_id"] in (
+        current.get("organization_id"),
+        current.get("organization_slug"),
+    ), "Recovery Organization mismatch"
+    request("/v1/projects/" + ref, "DELETE")
+    deadline = time.monotonic() + 60
+    while project_by_ref(ref) is not None:
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                "Recovery deletion not confirmed; retain source manifest"
+            )
+        time.sleep(2)
+    print("Operator-confirmed Project deletion verified: " + ref)
+
+
 def main():
     action, path = sys.argv[1], Path(sys.argv[2])
     if action == "prepare":
@@ -432,7 +460,9 @@ def main():
         return
     else:
         manifest = json.loads(path.read_text())
-        if action == "record":
+        if action == "recover":
+            recover_confirmed_project(manifest, sys.argv[3])
+        elif action == "record":
             record_creation(path, manifest, json.loads(sys.argv[3]), manifest["main"])
         elif action == "converge":
             fixture_dir(manifest)

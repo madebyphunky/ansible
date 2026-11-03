@@ -247,3 +247,49 @@ def test_record_action_persists_receipt_before_capture(tmp_path, monkeypatch):
         json.loads(path.read_text())["creation_receipts"][name]
         == "abcdefghijabcdefghij"
     )
+
+
+def test_operator_recovery_deletes_only_the_confirmed_ref(monkeypatch):
+    data = manifest()
+    ref = "abcdefghijabcdefghij"
+    state = {
+        "project": {
+            "ref": ref,
+            "name": data["main"],
+            "organization_id": data["organization_id"],
+        }
+    }
+    monkeypatch.setattr(live, "project_by_ref", lambda value: state["project"])
+    calls = []
+
+    def request(endpoint, method="GET", body=None):
+        calls.append((endpoint, method))
+        state["project"] = None
+
+    monkeypatch.setattr(live, "request", request)
+    live.recover_confirmed_project(data, ref)
+    assert calls == [("/v1/projects/" + ref, "DELETE")]
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("name", "unrelated"),
+        ("organization_id", "other"),
+        ("ref", "zzzzzzzzzzzzzzzzzzzz"),
+    ],
+)
+def test_operator_recovery_rejects_identity_mismatch(monkeypatch, field, value):
+    data = manifest()
+    row = {
+        "ref": "abcdefghijabcdefghij",
+        "name": data["main"],
+        "organization_id": data["organization_id"],
+    }
+    row[field] = value
+    monkeypatch.setattr(live, "project_by_ref", lambda *_: row)
+    monkeypatch.setattr(
+        live, "request", lambda *_: pytest.fail("Deletion must not occur")
+    )
+    with pytest.raises(AssertionError):
+        live.recover_confirmed_project(data, "abcdefghijabcdefghij")

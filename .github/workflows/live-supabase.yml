@@ -7,6 +7,10 @@ on:
         description: Inspect a failed run's exact ownership manifest without mutations
         required: false
         type: string
+      recovery_project_ref:
+        description: Operator-confirmed exact Project ref to delete from the inspected manifest before a new live run
+        required: false
+        type: string
 permissions:
   contents: read
   actions: read
@@ -57,11 +61,16 @@ jobs:
                   report['delta_ms'] = report['created_ms'] - manifest['started_ms']
               print(json.dumps(report))
           PYTHON
+      - name: Recover the operator-confirmed leftover Project
+        if: inputs.inspect_run_id != '' && inputs.recovery_project_ref != ''
+        env:
+          RECOVERY_PROJECT_REF: ${{ inputs.recovery_project_ref }}
+        run: python tests/live_supabase_acceptance.py recover .cache/supabase-inspection/run.json "$RECOVERY_PROJECT_REF"
       - name: Run live acceptance
-        if: inputs.inspect_run_id == ''
+        if: inputs.inspect_run_id == '' || inputs.recovery_project_ref != ''
         run: molecule test -s supabase
       - name: Retry cleanup of exact test-owned resources
-        if: always() && inputs.inspect_run_id == ''
+        if: always() && (inputs.inspect_run_id == '' || inputs.recovery_project_ref != '')
         run: molecule cleanup -s supabase
       - name: Retain exact-identity cleanup manifest after a failure
         if: failure()

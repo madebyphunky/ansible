@@ -118,6 +118,13 @@ ownership for every newly allocated Project. Without a receipt, the conservative
 timestamp guard remains; legacy failed manifests may require explicit operator
 recovery rather than automatic deletion.
 
+For an explicitly reviewed legacy failure, the manual workflow accepts
+`inspect_run_id` and `recovery_project_ref`. It downloads that run's retained
+manifest, inspects nonsecret identity fields, and deletes only the exact
+operator-confirmed reference after checking its allocated name and Organization.
+It confirms absence before starting a fresh live scenario. This recovery mode is
+an explicit operator action, not a relaxation of automatic cleanup ownership.
+
 Attempt cleanup after both successful and failed tests. Remove the manifest only
 when provider absence is confirmed; otherwise retain it for safe recovery and
 upload the nonsecret manifest as a failure artifact. A lost runner cannot guarantee
