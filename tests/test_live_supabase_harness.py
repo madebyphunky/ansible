@@ -353,6 +353,15 @@ def test_live_verification_does_not_skip_database_permission_failure(
     path = tmp_path / "manifest.json"
     live.save(path, data)
     monkeypatch.setattr(live, "capture", lambda *_: None)
+    monkeypatch.setattr(
+        live,
+        "request",
+        lambda *_: {
+            "external_email_enabled": True,
+            "site_url": "https://acceptance.example.test",
+            "uri_allow_list": "https://acceptance.example.test/callback",
+        },
+    )
     monkeypatch.setattr(live, "project", lambda *_: {"ref": ref})
     monkeypatch.setattr(
         live,
@@ -393,3 +402,34 @@ def test_fixture_paths_work_from_ansible_execution_directory(tmp_path, monkeypat
     assert root.is_absolute()
     assert Path(data["auth_config"]).is_file()
     assert (Path(data["fixture_dir"]) / "supabase/migrations").is_dir()
+
+
+def test_live_verification_rejects_changed_omitted_auth_setting(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("SUPABASE_ACCESS_TOKEN", "dummy-token")
+    monkeypatch.setenv("SUPABASE_TEST_PASSWORD", "dummy-password")
+    monkeypatch.delenv("SUPABASE_TEST_SMTP_PASS", raising=False)
+    data = manifest()
+    ref = data["projects"][data["main"]]
+    path = tmp_path / "manifest.json"
+    live.save(path, data)
+    monkeypatch.setattr(live, "capture", lambda *_: None)
+    monkeypatch.setattr(live, "project", lambda *_: {"ref": ref})
+    monkeypatch.setattr(
+        live,
+        "run_role",
+        lambda *_args, **_kwargs: {"project": {"ref": ref, "status": "ACTIVE_HEALTHY"}},
+    )
+    responses = iter(
+        [
+            {"external_email_enabled": True},
+            {
+                "external_email_enabled": False,
+                "site_url": "https://acceptance.example.test",
+                "uri_allow_list": "https://acceptance.example.test/callback",
+            },
+        ]
+    )
+    monkeypatch.setattr(live, "request", lambda *_: next(responses))
+    with pytest.raises(AssertionError, match="Omitted Auth configuration"):
+        live.verify(path, data)

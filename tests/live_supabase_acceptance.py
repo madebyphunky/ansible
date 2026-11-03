@@ -340,6 +340,12 @@ def verify(path, manifest):
         "supabase_project_ref": ref,
         "supabase_auth_config": manifest["auth_config"],
     }
+    before_auth = request("/v1/projects/" + ref + "/config/auth")
+    assert isinstance(before_auth, dict), "Auth configuration could not be inspected"
+    preserved_key = "external_email_enabled"
+    assert (
+        preserved_key in before_auth
+    ), "Expected omitted Auth field unavailable for verification"
     run_role(path, manifest, AUTH, auth_config)
     run_role(path, manifest, AUTH, auth_config, expected_changes=0)
     if manifest.get("auth_secret_config"):
@@ -348,6 +354,17 @@ def verify(path, manifest):
         )
         run_role(path, manifest, AUTH, secret_vars)
         run_role(path, manifest, AUTH, secret_vars, expected_changes=0)
+    observed_auth = request("/v1/projects/" + ref + "/config/auth")
+    assert isinstance(observed_auth, dict), "Auth configuration could not be inspected"
+    assert (
+        observed_auth.get("site_url") == "https://acceptance.example.test"
+    ), "Auth site URL readback mismatch"
+    assert "https://acceptance.example.test/callback" in str(
+        observed_auth.get("uri_allow_list", "")
+    ), "Auth redirect readback mismatch"
+    assert (
+        observed_auth.get(preserved_key) == before_auth[preserved_key]
+    ), "Omitted Auth configuration was changed"
     migration_vars = {
         "SUPABASE_ACCESS_TOKEN": os.environ["SUPABASE_ACCESS_TOKEN"],
         "SUPABASE_DB_PASSWORD": password(),
