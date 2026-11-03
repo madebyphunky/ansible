@@ -94,11 +94,18 @@ def capture(path, manifest):
             item.get("organization_id"),
             item.get("organization_slug"),
         ), "Project organization mismatch"
-        assert (
-            created_ms(item) >= manifest["started_ms"] - 1000
-        ), "Pre-existing Project; refusing ownership"
         ref = item.get("ref") or item.get("id")
         assert ref and re.fullmatch(r"[a-z]{20}", ref), "Unexpected Project reference"
+        receipt = manifest.get("creation_receipts", {}).get(name)
+        if receipt is not None:
+            assert receipt == ref, "Project reference changed; refusing ownership"
+            assert name in manifest.get(
+                "initial_absence", []
+            ), "Initial absence evidence missing"
+        else:
+            assert (
+                created_ms(item) >= manifest["started_ms"] - 1000
+            ), "Pre-existing Project; refusing ownership"
         assert manifest["projects"][name] in (
             None,
             ref,
@@ -144,6 +151,30 @@ def project_vars(manifest, name=None, ref=None):
     return values
 
 
+def record_creation(path, manifest, public, name):
+    """Persist a successful provider creation response, not just a name match."""
+    if not public.get("creation_attempted") or not public.get("project"):
+        return
+    item = public["project"]
+    ref = item.get("ref")
+    assert name in manifest.get(
+        "initial_absence", []
+    ), "Initial absence evidence missing"
+    assert name in manifest["projects"], "Project name was not allocated by this run"
+    assert item.get("name") == name, "Created Project name mismatch"
+    assert manifest["organization_id"] in (
+        item.get("organization_id"),
+        item.get("organization_slug"),
+    ), "Created Project organization mismatch"
+    assert ref and re.fullmatch(
+        r"[a-z]{20}", ref
+    ), "Unexpected created Project reference"
+    receipts = manifest.setdefault("creation_receipts", {})
+    assert receipts.get(name) in (None, ref), "Creation receipt reference changed"
+    receipts[name] = ref
+    save(path, manifest)
+
+
 def run_role(path, manifest, role, values, check=False, expected_changes=None):
     result_key = {
         PROJECT: "supabase_project_result",
@@ -175,7 +206,10 @@ def run_role(path, manifest, role, values, check=False, expected_changes=None):
         assert result.returncode == 0, result.stdout
         if expected_changes is not None:
             assert changed(result) == expected_changes, result.stdout
-        return public_result(result.stdout, "project")
+        public = public_result(result.stdout, "project")
+        if role == PROJECT and not check:
+            record_creation(path, manifest, public, values["supabase_project_name"])
+        return public
     finally:
         capture(path, manifest)
 
@@ -225,6 +259,8 @@ def prepare(path):
     assert all(
         project(manifest, name) is None for name in manifest["projects"]
     ), "Allocated Project already exists"
+    manifest["initial_absence"] = list(manifest["projects"])
+    manifest["creation_receipts"] = {}
     save(path, manifest)
     run_role(path, manifest, PROJECT, project_vars(manifest, sentinel))
 
@@ -396,7 +432,9 @@ def main():
         return
     else:
         manifest = json.loads(path.read_text())
-        if action == "converge":
+        if action == "record":
+            record_creation(path, manifest, json.loads(sys.argv[3]), manifest["main"])
+        elif action == "converge":
             fixture_dir(manifest)
             save(path, manifest)
             run_role(path, manifest, PROJECT, project_vars(manifest))

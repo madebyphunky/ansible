@@ -107,6 +107,17 @@ creation is indeterminate, reconcile using the persisted pre-creation evidence
 and provider identity; fail closed when ownership cannot be established. A name
 match or prefix alone is not deletion authority.
 
+Persist pre-creation absence evidence and the exact reference returned by a
+confirmed creation call before inspecting provider state. Both prepare and the
+converge playbook retain these creation receipts; converge does so even when a
+later Role task fails. A matching receipt plus initial absence, Organization,
+name, and reference continuity establishes ownership independently of the
+provider timestamp. The first live attempt exposed a returned creation timestamp
+roughly 117 minutes before the run, so timestamp recency alone cannot establish
+ownership for every newly allocated Project. Without a receipt, the conservative
+timestamp guard remains; legacy failed manifests may require explicit operator
+recovery rather than automatic deletion.
+
 Attempt cleanup after both successful and failed tests. Remove the manifest only
 when provider absence is confirmed; otherwise retain it for safe recovery and
 upload the nonsecret manifest as a failure artifact. A lost runner cannot guarantee
