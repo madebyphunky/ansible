@@ -1,0 +1,15 @@
+---
+namespace: madebyphunky
+name: application
+version: 0.1.0
+readme: README.md
+authors: [madebyphunky]
+description: Thin Application composition across GitHub, Vercel, and Supabase.
+license: [MIT]
+tags: [application, composition]
+repository: https://github.com/madebyphunky/ansible
+issues: https://github.com/madebyphunky/ansible/issues
+dependencies:
+  madebyphunky.vercel: ">=0.3.0"
+  madebyphunky.supabase: ">=0.2.0"
+build_ignore: [.cache, .ansible, '*.tar.gz']

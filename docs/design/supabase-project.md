@@ -23,9 +23,9 @@ or simulated CLI test does not satisfy the live gate.
 ## Scope and composition
 
 - Hosted Supabase only; self-hosted and local development stacks are outside scope.
-- Public Roles: `madebyphunky.supabase.project`, `madebyphunky.supabase.auth`, and
-  `madebyphunky.supabase.migrations`, in the independently installable
-  `madebyphunky.supabase` Collection.
+- Public Roles: `madebyphunky.supabase.project`, `madebyphunky.supabase.auth`,
+  `madebyphunky.supabase.migrations`, and `madebyphunky.supabase.credentials`, in
+  the independently installable `madebyphunky.supabase` Collection.
 - Each Role is independently runnable with explicit inputs. Thin example playbooks
   compose them, passing the project reference from the project Role.
 - Storage buckets, Edge Functions, and function secrets are outside this delivery.
@@ -66,7 +66,11 @@ or simulated CLI test does not satisfy the live gate.
   within a configurable 900-second budget, polling every five seconds by default.
 - Preserve nonsecret identities when known on partial failure; never return
   passwords. No rollback. Return ref, organization, name, region, status,
-  and project URL; do not retrieve API keys or connection strings.
+  and project URL from the project Role.
+- `madebyphunky.supabase.credentials` retrieves Project URL plus publishable and
+  secret API keys for an exact project reference via
+  `projects api-keys --reveal`. Prefer new publishable/secret keys; fall back to
+  legacy anon/service_role. Do not retrieve Postgres connection strings.
 
 ## Auth
 

@@ -1,0 +1,3 @@
+---
+application_env_file: .env.local
+application_env: {}

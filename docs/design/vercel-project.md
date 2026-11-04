@@ -43,8 +43,9 @@ implementation. See the provider-scoped Collections ADR for public naming.
   settings on existing Projects.
 - Linked repositories retain normal Vercel deployments on future Git pushes.
   The deployment option controls the Role's explicit request during a run.
-- Custom domains, DNS, and application environment-variable management are outside
-  this first version.
+- Custom domains and DNS remain outside the Project Role. Application environment
+  variables are owned by `madebyphunky.vercel.env` (production target only; never
+  Preview-scoped).
 
 ## Explicit deployment
 

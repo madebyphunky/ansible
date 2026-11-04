@@ -1,0 +1,232 @@
+---
+# Thin Application setup composer (ADR-0002). Logic stays in Roles.
+#
+# Human prerequisites (outside Roles):
+# - Authenticated provider accounts and tokens (VERCEL_TOKEN, GH_TOKEN,
+#   SUPABASE_ACCESS_TOKEN)
+# - Vercel GitHub App installed with access to the target repository
+#
+# From-scratch: vercel_source_mode=ensure (empty private GitHub repository).
+# Adoption: vercel_source_mode=existing (link an existing repository).
+#
+# Phased and re-runnable: missing later-stage inputs skip that stage with a
+# message; earlier stages remain successful. Hard fail only inside a ready stage.
+#
+# After source exists, stages run: migrations → Auth → env wiring → optional
+# exact-SHA production Deployment → Auth Site URL/redirect update when a
+# Deployment URL is known.
+- name: Set up an Application across GitHub, Vercel, and Supabase
+  hosts: "{{ target_hosts | default('localhost') }}"
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Ensure the Vercel Project and GitHub repository link
+      ansible.builtin.include_role:
+        name: madebyphunky.vercel.project
+
+    - name: Ensure the hosted Supabase Project
+      ansible.builtin.include_role:
+        name: madebyphunky.supabase.project
+
+    - name: Select the Supabase Project reference for later stages
+      ansible.builtin.set_fact:
+        supabase_project_ref: "{{ supabase_project_result.project.ref }}"
+      when:
+        - not ansible_check_mode
+        - supabase_project_result.project.ref is defined
+
+    - name: Detect Application source stage readiness
+      ansible.builtin.set_fact:
+        _application_workdir_path: "{{ application_workdir | default('') }}"
+        _application_migrations_path: "{{ (application_workdir | default('')) + '/supabase/migrations' }}"
+        _application_auth_config_path: "{{ supabase_auth_config | default('') }}"
+      when: not ansible_check_mode
+
+    - name: Stat Application source paths
+      ansible.builtin.stat:
+        path: "{{ item.path }}"
+      loop:
+        - {key: workdir, path: "{{ _application_workdir_path }}"}
+        - {key: migrations, path: "{{ _application_migrations_path }}"}
+        - {key: auth_config, path: "{{ _application_auth_config_path }}"}
+      loop_control:
+        label: "{{ item.key }}"
+      register: _application_source_stats
+      when:
+        - not ansible_check_mode
+        - _application_workdir_path | length > 0 or _application_auth_config_path | length > 0
+
+    - name: Record which later stages are ready
+      ansible.builtin.set_fact:
+        _application_migrations_ready: >-
+          {{
+            (_application_source_stats.results | default([])
+              | selectattr('item.key', 'equalto', 'migrations')
+              | map(attribute='stat.isdir')
+              | first) | default(false)
+          }}
+        _application_auth_ready: >-
+          {{
+            (_application_source_stats.results | default([])
+              | selectattr('item.key', 'equalto', 'auth_config')
+              | map(attribute='stat.isreg')
+              | first) | default(false)
+          }}
+        _application_workdir_ready: >-
+          {{
+            (_application_source_stats.results | default([])
+              | selectattr('item.key', 'equalto', 'workdir')
+              | map(attribute='stat.isdir')
+              | first) | default(false)
+          }}
+        _application_deploy_ready: "{{ (vercel_deploy | default(false) | bool) and (vercel_git_sha | default('') | length) == 40 }}"
+      when: not ansible_check_mode
+
+    - name: Skip migrations until supabase/migrations exists
+      ansible.builtin.debug:
+        msg: >-
+          Skipping migrations; set application_workdir to a checkout containing
+          supabase/migrations, then re-run.
+      when:
+        - not ansible_check_mode
+        - not (_application_migrations_ready | bool)
+
+    - name: Apply pending SQL migrations
+      ansible.builtin.include_role:
+        name: madebyphunky.supabase.migrations
+      vars:
+        supabase_workdir: "{{ application_workdir }}"
+        SUPABASE_DB_PASSWORD: "{{ database_password | default(supabase_project_password) }}"
+      when:
+        - not ansible_check_mode
+        - _application_migrations_ready | bool
+
+    - name: Skip Auth until supabase_auth_config exists
+      ansible.builtin.debug:
+        msg: >-
+          Skipping Auth; set supabase_auth_config to a config.toml path, then re-run.
+      when:
+        - not ansible_check_mode
+        - not (_application_auth_ready | bool)
+
+    - name: Configure Auth from the declared config.toml
+      ansible.builtin.include_role:
+        name: madebyphunky.supabase.auth
+      when:
+        - not ansible_check_mode
+        - _application_auth_ready | bool
+
+    - name: Skip env wiring until an application_workdir exists
+      ansible.builtin.debug:
+        msg: >-
+          Skipping env wiring; set application_workdir for local .env.local and
+          production Vercel env wiring, then re-run.
+      when:
+        - not ansible_check_mode
+        - not (_application_workdir_ready | bool)
+
+    - name: Retrieve Supabase Project URL and API keys
+      ansible.builtin.include_role:
+        name: madebyphunky.supabase.credentials
+      when:
+        - not ansible_check_mode
+        - _application_workdir_ready | bool
+
+    - name: Map retrieved credentials into Application env names
+      ansible.builtin.set_fact:
+        application_env: >-
+          {{
+            {
+              'NEXT_PUBLIC_SUPABASE_URL': supabase_credentials_result.project.url,
+              'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY': supabase_credentials_result.publishable_key,
+              'SUPABASE_SECRET_KEY': supabase_credentials_result.secret_key
+            } | combine(application_env | default({}))
+          }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - _application_workdir_ready | bool
+        - supabase_credentials_result is defined
+
+    - name: Ensure production Vercel environment variables
+      ansible.builtin.include_role:
+        name: madebyphunky.vercel.env
+      vars:
+        vercel_env: "{{ application_env }}"
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - _application_workdir_ready | bool
+        - application_env is defined
+
+    - name: Write gitignored local .env.local
+      ansible.builtin.include_role:
+        name: madebyphunky.application.local_env
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - _application_workdir_ready | bool
+        - application_env is defined
+
+    - name: Skip production Deployment until an exact git SHA is supplied
+      ansible.builtin.debug:
+        msg: >-
+          Skipping production Deployment; set vercel_deploy=true and vercel_git_sha
+          to an exact 40-character commit after pushing Application source, then re-run.
+      when:
+        - not ansible_check_mode
+        - not (_application_deploy_ready | bool)
+
+    - name: Publish the exact commit as the production Deployment
+      ansible.builtin.include_role:
+        name: madebyphunky.vercel.project
+      vars:
+        vercel_deploy: true
+      when:
+        - not ansible_check_mode
+        - _application_deploy_ready | bool
+
+    - name: Skip Auth URL update until a production Deployment URL exists
+      ansible.builtin.debug:
+        msg: >-
+          Skipping Auth Site URL update; re-run after a production Deployment URL
+          is available in vercel_project_result.deployment.url.
+      when:
+        - not ansible_check_mode
+        - (_application_deploy_ready | bool)
+        - vercel_project_result.deployment.url is not defined
+
+    - name: Stage Auth Site URL and localhost redirect for the Deployment origin
+      when:
+        - not ansible_check_mode
+        - vercel_project_result.deployment.url is defined
+      block:
+        - name: Allocate temporary Auth redirect config path
+          ansible.builtin.tempfile:
+            suffix: -application-auth.toml
+          register: _application_auth_redirect_temp
+
+        - name: Build Auth redirect config for production and localhost
+          ansible.builtin.set_fact:
+            _application_auth_redirect_config: "{{ _application_auth_redirect_temp.path }}"
+            _application_deployment_origin: "{{ vercel_project_result.deployment.url | regex_replace('/$', '') }}"
+
+        - name: Write sparse Auth redirect config
+          ansible.builtin.copy:
+            dest: "{{ _application_auth_redirect_config }}"
+            mode: "0600"
+            content: |
+              [auth]
+              site_url = "{{ _application_deployment_origin }}"
+              additional_redirect_urls = ["{{ _application_deployment_origin }}/**", "http://localhost:3000/**"]
+
+        - name: Apply Auth Site URL and redirect allowlist
+          ansible.builtin.include_role:
+            name: madebyphunky.supabase.auth
+          vars:
+            supabase_auth_config: "{{ _application_auth_redirect_config }}"
+
+        - name: Remove temporary Auth redirect config
+          ansible.builtin.file:
+            path: "{{ _application_auth_redirect_config }}"
+            state: absent

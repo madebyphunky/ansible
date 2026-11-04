@@ -1,0 +1,43 @@
+---
+argument_specs:
+  main:
+    short_description: Ensure production environment variables on a Vercel Project.
+    options:
+      VERCEL_TOKEN:
+        type: str
+        no_log: true
+        description: Explicit Vercel token; falls back to the controller environment of the same name.
+      vercel_project_name:
+        type: str
+        required: true
+        description: Explicit Project name.
+      vercel_scope_type:
+        type: str
+        required: true
+        choices: [personal, team]
+        description: Whether scope_id is a personal account or team ID.
+      vercel_scope_id:
+        type: str
+        required: true
+        description: Expected provider account or team ID, verified before mutation.
+      vercel_env:
+        type: dict
+        required: true
+        no_log: true
+        description: Map of environment variable names to values.
+      vercel_env_target:
+        type: str
+        choices: [production]
+        description: Vercel environment target; only production is supported.
+      vercel_env_timeout:
+        type: int
+        description: Provider-operation wait budget in seconds; defaults to 900.
+      vercel_manage_prerequisites:
+        type: bool
+        description: Ensure Node.js and npx through the Node.js setup Role.
+      vercel_npx_executable:
+        type: str
+        description: npx executable when prerequisites are caller-managed.
+      vercel_node_executable:
+        type: str
+        description: Node executable when prerequisites are caller-managed.

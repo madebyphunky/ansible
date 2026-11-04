@@ -10,7 +10,9 @@ from urllib.parse import parse_qs, urlsplit
 path = Path(os.environ["VERCEL_CONTRACT_STATE"])
 data = json.loads(path.read_text())
 args = sys.argv[1:]
-provider = "vercel" if Path(sys.argv[0]).name == "npx" else "github"
+provider = os.environ.get("APPLICATION_FIXTURE_PROVIDER")
+if provider is None:
+    provider = "vercel" if Path(sys.argv[0]).name == "npx" else "github"
 endpoint = args[args.index("api") + 1]
 method = args[args.index("--method") + 1]
 body = json.load(sys.stdin) if "--input" in args else None
@@ -49,7 +51,11 @@ if provider == "github":
     if route.startswith("/users/"):
         owner = route.split("/")[-1]
         reply({"login": owner, "type": data.get("owner_type", "User")})
-    if method == "POST":
+    if method == "POST" and (
+        route.endswith("/repos")
+        or route.startswith("/orgs/")
+        or route.startswith("/user/")
+    ):
         owner = (
             route.split("/")[2]
             if route.startswith("/orgs/")
@@ -58,7 +64,7 @@ if provider == "github":
         repo = {
             "id": 101,
             "full_name": owner + "/" + body["name"],
-            "private": body["private"],
+            "private": body.get("private", True),
             "html_url": "https://github.com/" + owner + "/" + body["name"],
         }
         data["repository"] = repo
@@ -104,6 +110,39 @@ if route == "/v11/projects" and method == "POST":
         project["link"] = {"type": "github", "org": owner, "repo": repository}
     data["project"] = project
     reply(project, 201)
+if "/env" in route and (
+    route.startswith("/v9/projects/") or route.startswith("/v10/projects/")
+):
+    project = data.get("project")
+    if project is None:
+        reply({"error": {"message": "Not Found"}}, 404)
+    envs = data.setdefault("envs", [])
+    if method == "GET" and route.endswith("/env"):
+        visible = []
+        for item in envs:
+            row = dict(item)
+            if row.get("type") == "sensitive":
+                row["value"] = None
+            visible.append(row)
+        reply({"envs": visible})
+    if method == "POST" and route.endswith("/env"):
+        created = dict(body)
+        created.setdefault("id", "env_" + str(len(envs) + 1))
+        envs.append(dict(created))
+        response = dict(created)
+        if response.get("type") == "sensitive":
+            response["value"] = None
+        reply(response, 201)
+    if method == "PATCH" and "/env/" in route:
+        env_id = route.rstrip("/").split("/")[-1]
+        existing = next((item for item in envs if item.get("id") == env_id), None)
+        if existing is None:
+            reply({"error": {"message": "Env Not Found"}}, 404)
+        existing.update(body)
+        if existing.get("type") == "sensitive":
+            existing["value"] = body.get("value", existing.get("value"))
+        reply(existing)
+    reply({"error": {"message": "Unhandled env route " + route}}, 500)
 if route.startswith("/v9/projects/"):
     project = data.get("project")
     if project is None:

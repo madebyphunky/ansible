@@ -1,10 +1,10 @@
 ---
 namespace: madebyphunky
 name: supabase
-version: 0.1.0
+version: 0.2.0
 readme: README.md
 authors: [madebyphunky]
-description: Hosted Supabase Projects, Auth configuration, and database migrations.
+description: Hosted Supabase Projects, Auth, migrations, and credential retrieval.
 license: [MIT]
 tags: [cloud, database, supabase]
 repository: https://github.com/madebyphunky/ansible

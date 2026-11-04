@@ -1,10 +1,10 @@
 ---
 namespace: madebyphunky
 name: vercel
-version: 0.2.0
+version: 0.3.0
 readme: README.md
 authors: [madebyphunky]
-description: Explicitly scoped Vercel Project provisioning and deployment.
+description: Explicitly scoped Vercel Project provisioning, deployment, and production env vars.
 license: [MIT]
 tags: [cloud, deployment, vercel]
 repository: https://github.com/madebyphunky/ansible
