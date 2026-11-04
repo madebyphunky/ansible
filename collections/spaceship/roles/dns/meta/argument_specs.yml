@@ -1,0 +1,42 @@
+---
+argument_specs:
+  main:
+    short_description: Manage explicitly declared Spaceship DNS record sets.
+    options:
+      spaceship_dns_zone:
+        type: str
+        required: true
+        description: One Spaceship DNS zone, without a trailing dot.
+      spaceship_dns_api_key:
+        type: str
+        no_log: true
+        description: API key; otherwise read controller environment SPACESHIP_API_KEY.
+      spaceship_dns_api_secret:
+        type: str
+        no_log: true
+        description: API secret; otherwise read controller environment SPACESHIP_API_SECRET.
+      spaceship_dns_records:
+        type: list
+        elements: dict
+        required: true
+        description: Nonempty explicit Managed set; omission never deletes records.
+        options:
+          name:
+            type: str
+            required: true
+            description: Relative name, or @ for the apex.
+          type:
+            type: str
+            required: true
+            description: Uppercase DNS record type.
+          state:
+            type: str
+            choices: [present, absent]
+            description: Desired state; defaults to present.
+          ttl:
+            type: int
+            description: Explicit TTL in seconds, required for present entries.
+          values:
+            type: list
+            elements: str
+            description: Complete nonempty values for present entries; supplied in DNS presentation format.

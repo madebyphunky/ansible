@@ -1,0 +1,8 @@
+---
+- name: Converge explicitly owned Spaceship DNS record sets
+  madebyphunky.spaceship.dns_records:
+    zone: "{{ spaceship_dns_zone }}"
+    records: "{{ spaceship_dns_records }}"
+    api_key: "{{ spaceship_dns_api_key | default(lookup('ansible.builtin.env', 'SPACESHIP_API_KEY')) }}"
+    api_secret: "{{ spaceship_dns_api_secret | default(lookup('ansible.builtin.env', 'SPACESHIP_API_SECRET')) }}"
+  no_log: true

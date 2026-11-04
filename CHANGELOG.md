@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add the Spaceship DNS Collection and Role with Gandi-compatible record-set
+  declarations, protected provider records, check mode, and DNS string translation.
+
 - Provide independently installable Gandi, Vercel, GitHub, and Node.js Collections.
 - Manage explicit Gandi LiveDNS RRsets with PAT authentication, validation before
   mutation, check mode, idempotency, and ordered execution that stops on failure.

@@ -1,0 +1,3 @@
+---
+# Required inputs deliberately have no defaults. Credentials fall back only when unset.
+{}

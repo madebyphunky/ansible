@@ -24,6 +24,10 @@ _Avoid_: Gandi domain API, registrar API
 The explicitly identified record sets a Role owns, each identified by zone, name, and type and including all values for that combination. Record sets outside the Managed set are never touched.
 _Avoid_: full-zone sync, wipe-and-replace, unmanaged delete
 
+**Spaceship DNS**:
+Spaceship's DNS service for records in zones already hosted there. Domain registration, transfer, and nameserver changes are outside this Role's scope.
+_Avoid_: LiveDNS (Gandi-specific), domain migration, registrar management
+
 **Personal Access Token (PAT)**:
 Gandi bearer credential for LiveDNS (`Authorization: Bearer …`). The only auth the Gandi LiveDNS Role accepts.
 _Avoid_: API key, Apikey
