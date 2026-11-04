@@ -5,6 +5,12 @@ Project, optionally connects or creates a GitHub repository, and optionally make
 an exact commit the active production deployment. It composes
 `madebyphunky.nodejs.setup` and `madebyphunky.github.cli` prerequisites when needed.
 
+The `madebyphunky.vercel.env` Role ensures declared application environment
+variables for the **production** target only. `NEXT_PUBLIC_*` keys use type
+`encrypted`; other keys use `sensitive`. Unspecified remote variables are
+preserved. Preview/development targets are refused. Existing sensitive values
+are not re-read; re-runs leave them unchanged once present.
+
 Install the sibling Node.js and GitHub Collections first, then this Collection.
 See the repository guide for the multi-Collection build and installation command.
 Use Ansible Core 2.18 or 2.19 and a supported Python. The Role runs on macOS or
@@ -84,8 +90,9 @@ longer active. Matching compares the effective five supported build settings;
 a changed setting requires a new deployment. Failed work requires explicit retry.
 
 On failure or timeout, created resources remain for inspection/resumption. The
-Role does not automatically roll back or delete resources. Custom domains,
-application scaffolding, and application environment variables are outside scope.
+Role does not automatically roll back or delete resources. Custom domains and
+application scaffolding are outside the Project Role. Application environment
+variables are owned by `madebyphunky.vercel.env` (production target only).
 
 ## Check mode and results
 
