@@ -7,7 +7,7 @@ Vercel, and Supabase setup (ADR-0002). Provider API logic stays in
 | Role / playbook | Inputs | Public result |
 | --- | --- | --- |
 | `madebyphunky.application.local_env` | `application_workdir`, `application_env`, optional `application_env_file` | `application_local_env_result` |
-| `playbooks/setup.yml` | Provider Project vars + optional `application_workdir`, `supabase_auth_config`, `vercel_git_sha` | Composes provider Role results |
+| `playbooks/setup.yml` | Provider Project vars + optional `application_workdir`, `application_auth_config`, `vercel_git_sha` | Composes provider Role results |
 
 ## Setup playbook
 
@@ -16,17 +16,21 @@ Vercel, and Supabase setup (ADR-0002). Provider API logic stays in
 
 1. Vercel Project + GitHub link (`ensure` or `existing`) and Supabase Project
 2. Migrations when `application_workdir/supabase/migrations` exists
-3. Auth when `supabase_auth_config` exists
+3. Auth when `application_auth_config` exists
 4. Env wiring (credentials → Vercel production + local `.env.local`) when
    `application_workdir` exists
-5. Production Deployment when `vercel_deploy=true` and `vercel_git_sha` is an
-   exact 40-character SHA
+5. Production Deployment when `vercel_git_sha` is an exact 40-character SHA
 6. Auth Site URL + localhost redirects when a Deployment URL is known
 
 Missing later stages print what is still needed and do not fail earlier success.
+Do not set play-level `vercel_deploy` or `supabase_auth_config`; those Role
+inputs are stage-local and Ansible extra-vars would override the composer. Supply
+`vercel_git_sha` when the exact commit is ready, and `application_auth_config`
+for the declared Auth config.toml.
 
 Human prerequisites: provider tokens and Vercel’s GitHub App access to the
-repository. See `docs/design/project-creation.md`.
+repository. Design source of truth: `docs/design/project-creation.md`. Live
+verification expectations: `docs/application-live-verification.md`.
 
 ## Local environment file
 

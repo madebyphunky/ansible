@@ -10,7 +10,7 @@ root contains shared tooling and documentation.
 | `madebyphunky.vercel` | `madebyphunky.vercel.project`, `.env` | Ensure a Vercel Project, optional GitHub repository/production deployment, and production application environment variables. |
 | `madebyphunky.github` | `madebyphunky.github.cli` | Ensure GitHub CLI is available. |
 | `madebyphunky.supabase` | `madebyphunky.supabase.project`, `.auth`, `.migrations`, `.credentials` | Ensure hosted Projects, configure Auth, apply SQL migrations, and retrieve Project URL/API keys through the CLI. |
-| `madebyphunky.application` | `madebyphunky.application.local_env` | Thin Application composer Collection; write gitignored local `.env.local` files. |
+| `madebyphunky.application` | `madebyphunky.application.local_env`, `playbooks/setup.yml` | Thin Application composer Collection; phased GitHub/Vercel/Supabase setup playbook and gitignored local `.env.local` writing. |
 | `madebyphunky.nodejs` | `madebyphunky.nodejs.setup` | Ensure a compatible Node.js runtime, npm, and npx are available. |
 
 ## Install
@@ -87,3 +87,11 @@ never count as a passing live run.
 Supabase contracts use an isolated CLI double. Protected live acceptance passed
 on 2026-11-03, including verified cleanup. See [Supabase verification](docs/supabase-verification.md)
 for the tested commit, versions, coverage, and limitations.
+
+Application setup design is recorded in
+[project creation](docs/design/project-creation.md). The
+`madebyphunky.application` Collection README documents the phased setup
+playbook. Credential-free stage-gating contracts live in
+`tests/test_application_setup_playbook.py`. Multi-provider live expectations and
+the explicit pending gate are in
+[Application live verification](docs/application-live-verification.md).

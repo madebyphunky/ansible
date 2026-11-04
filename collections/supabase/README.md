@@ -81,7 +81,10 @@ secret API keys for an exact `supabase_project_ref` via
 `default`; fall back to legacy `anon` / `service_role` when those are absent.
 Module and result publication tasks use `no_log`; composers read
 `supabase_credentials_result` deliberately. Do not debug that fact. Postgres
-connection strings remain out of scope.
+connection strings and the full Marketplace `POSTGRES_*` set remain out of
+scope; Project URL plus publishable/secret keys are in scope for Application
+wiring. Cross-provider composition lives in `madebyphunky.application`
+(`docs/design/project-creation.md`).
 
 ## Auth configuration
 
@@ -130,4 +133,6 @@ redaction, sparse Auth ownership, content_path staging, migrations, check mode,
 and partial failures. The Molecule live scenario and protected workflow exist,
 and protected live acceptance passed on 2026-11-03 with Supabase CLI 3.0.0,
 including verified cleanup. See [verification evidence](../../docs/supabase-verification.md)
-for the tested commit, coverage, versions, and limitations.
+for the tested commit, coverage, versions, and limitations. Multi-provider
+Application setup live expectations (pending until recorded) are in
+[Application live verification](../../docs/application-live-verification.md).

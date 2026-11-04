@@ -179,8 +179,7 @@ def test_setup_infra_only_stops_cleanly_without_source(application_setup):
     )
 
 
-def test_setup_continues_through_env_when_workdir_ready(application_setup):
-    run, checkout, read_vercel, read_supabase, _ = application_setup
+def _seed_application_source(checkout):
     migrations = checkout / "supabase" / "migrations"
     migrations.mkdir(parents=True)
     (migrations / "20261104090000_widgets.sql").write_text(
@@ -191,15 +190,25 @@ def test_setup_continues_through_env_when_workdir_ready(application_setup):
     )
     auth = checkout / "auth.toml"
     auth.write_text('[auth]\nsite_url = "http://localhost:3000"\n')
+    return auth
+
+
+def test_setup_continues_through_env_when_workdir_ready(application_setup):
+    run, checkout, read_vercel, read_supabase, _ = application_setup
+    auth = _seed_application_source(checkout)
     result = run(
         {
             "application_workdir": str(checkout),
-            "supabase_auth_config": str(auth),
+            "application_auth_config": str(auth),
         },
         verbose=True,
     )
     assert result.returncode == 0, result.stdout
     assert "Skipping migrations" not in result.stdout
+    assert "Skipping Auth" not in result.stdout
+    assert "Skipping env wiring" not in result.stdout
+    assert "Skipping production Deployment" in result.stdout
+    assert "Skipping Auth Site URL update" not in result.stdout
     assert "sb_secret_test_value" not in result.stdout
     assert (checkout / ".env.local").exists()
     assert (
@@ -213,4 +222,63 @@ def test_setup_continues_through_env_when_workdir_ready(application_setup):
     assert any(call["operation"] == "db push" for call in read_supabase()["calls"])
     assert any(
         call["operation"] == "projects api-keys" for call in read_supabase()["calls"]
+    )
+    assert not read_vercel().get("deployments")
+
+
+def test_setup_deploys_exact_sha_and_updates_auth_site_url(application_setup):
+    run, checkout, read_vercel, read_supabase, _ = application_setup
+    auth = _seed_application_source(checkout)
+    result = run(
+        {
+            "application_workdir": str(checkout),
+            "application_auth_config": str(auth),
+            "vercel_git_sha": SHA,
+        },
+        verbose=True,
+    )
+    assert result.returncode == 0, result.stdout
+    assert "Skipping production Deployment" not in result.stdout
+    assert "Skipping Auth Site URL update" not in result.stdout
+    assert "sb_secret_test_value" not in result.stdout
+    deployments = read_vercel().get("deployments", [])
+    assert len(deployments) == 1
+    assert deployments[0]["gitSource"]["sha"] == SHA
+    auth_state = read_supabase().get("auth", {})
+    assert auth_state.get("site_url") == "https://test-deployment.vercel.app"
+    assert auth_state.get("additional_redirect_urls") == [
+        "https://test-deployment.vercel.app/**",
+        "http://localhost:3000/**",
+    ]
+
+
+def test_setup_rejects_play_level_vercel_deploy(application_setup):
+    run, checkout, _, _, _ = application_setup
+    auth = _seed_application_source(checkout)
+    result = run(
+        {
+            "application_workdir": str(checkout),
+            "application_auth_config": str(auth),
+            "vercel_deploy": True,
+            "vercel_git_sha": SHA,
+        }
+    )
+    assert result.returncode != 0
+    assert "Do not set vercel_deploy on the Application setup playbook" in result.stdout
+
+
+def test_setup_rejects_play_level_supabase_auth_config(application_setup):
+    run, checkout, _, _, _ = application_setup
+    auth = _seed_application_source(checkout)
+    result = run(
+        {
+            "application_workdir": str(checkout),
+            "supabase_auth_config": str(auth),
+            "vercel_git_sha": SHA,
+        }
+    )
+    assert result.returncode != 0
+    assert (
+        "Do not set supabase_auth_config on the Application setup playbook"
+        in result.stdout
     )

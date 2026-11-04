@@ -20,9 +20,34 @@
   connection: local
   gather_facts: false
   tasks:
+    - name: Refuse play-level vercel_deploy so stages stay ordered
+      ansible.builtin.assert:
+        that:
+          - not (vercel_deploy | default(false) | bool)
+        fail_msg: >-
+          Do not set vercel_deploy on the Application setup playbook. Supply
+          vercel_git_sha (exact 40-character commit) when ready to publish; the
+          playbook enables Deployment only after earlier stages.
+      when: not ansible_check_mode
+
+    - name: Refuse play-level supabase_auth_config so Auth URL updates can run
+      ansible.builtin.assert:
+        that:
+          - (supabase_auth_config | default('')) | length == 0
+        fail_msg: >-
+          Do not set supabase_auth_config on the Application setup playbook.
+          Supply application_auth_config instead; the playbook passes that path
+          into madebyphunky.supabase.auth and must override it after Deployment
+          to set the Auth Site URL (extra-vars would win otherwise).
+      when: not ansible_check_mode
+
     - name: Ensure the Vercel Project and GitHub repository link
       ansible.builtin.include_role:
         name: madebyphunky.vercel.project
+      vars:
+        # Infrastructure setup never publishes; Deployment is a later stage.
+        # Callers must not pass play-level vercel_deploy (extra-vars win).
+        vercel_deploy: false
 
     - name: Ensure the hosted Supabase Project
       ansible.builtin.include_role:
@@ -39,7 +64,7 @@
       ansible.builtin.set_fact:
         _application_workdir_path: "{{ application_workdir | default('') }}"
         _application_migrations_path: "{{ (application_workdir | default('')) + '/supabase/migrations' }}"
-        _application_auth_config_path: "{{ supabase_auth_config | default('') }}"
+        _application_auth_config_path: "{{ application_auth_config | default('') }}"
       when: not ansible_check_mode
 
     - name: Stat Application source paths
@@ -79,7 +104,9 @@
               | map(attribute='stat.isdir')
               | first) | default(false)
           }}
-        _application_deploy_ready: "{{ (vercel_deploy | default(false) | bool) and (vercel_git_sha | default('') | length) == 40 }}"
+        # Gate on SHA only. Play-level vercel_deploy is refused above because
+        # extra-vars would force Infrastructure setup to publish too early.
+        _application_deploy_ready: "{{ (vercel_git_sha | default('') | length) == 40 }}"
       when: not ansible_check_mode
 
     - name: Skip migrations until supabase/migrations exists
@@ -101,10 +128,11 @@
         - not ansible_check_mode
         - _application_migrations_ready | bool
 
-    - name: Skip Auth until supabase_auth_config exists
+    - name: Skip Auth until application_auth_config exists
       ansible.builtin.debug:
         msg: >-
-          Skipping Auth; set supabase_auth_config to a config.toml path, then re-run.
+          Skipping Auth; set application_auth_config to a config.toml path, then
+          re-run.
       when:
         - not ansible_check_mode
         - not (_application_auth_ready | bool)
@@ -112,6 +140,8 @@
     - name: Configure Auth from the declared config.toml
       ansible.builtin.include_role:
         name: madebyphunky.supabase.auth
+      vars:
+        supabase_auth_config: "{{ _application_auth_config_path }}"
       when:
         - not ansible_check_mode
         - _application_auth_ready | bool
@@ -171,8 +201,8 @@
     - name: Skip production Deployment until an exact git SHA is supplied
       ansible.builtin.debug:
         msg: >-
-          Skipping production Deployment; set vercel_deploy=true and vercel_git_sha
-          to an exact 40-character commit after pushing Application source, then re-run.
+          Skipping production Deployment; set vercel_git_sha to an exact
+          40-character commit after pushing Application source, then re-run.
       when:
         - not ansible_check_mode
         - not (_application_deploy_ready | bool)

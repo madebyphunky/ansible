@@ -38,6 +38,9 @@ Not an implementation specification.
   (local + production) → production Deployment (Agent-supplied exact git SHA).
 - After first production Deployment URL exists, Auth sets Site URL to it and
   allows that origin plus localhost; earlier runs may skip Auth URL updates.
+- The setup playbook owns stage-local Role inputs that would break ordering if
+  set as play-level extra-vars (`vercel_deploy`, `supabase_auth_config`). Callers
+  supply `vercel_git_sha` and `application_auth_config` instead.
 
 ## Glossary / ADRs touched
 
