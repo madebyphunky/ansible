@@ -183,12 +183,122 @@ def test_explicit_ref_resolves_ambiguous_name_and_version_override(supabase):
     assert all(call["version"] == "supabase@3.0.0" for call in read()["calls"])
 
 
-@pytest.mark.parametrize("role", ["project", "auth", "migrations"])
+@pytest.mark.parametrize("role", ["project", "auth", "migrations", "credentials"])
 def test_check_mode_never_invokes_cli(supabase, role):
     run, read, _, _, _ = supabase
     result = run(role, check=True)
     assert result.returncode == 0, result.stdout
     assert "inspection_limited" in result.stdout
+    assert read()["calls"] == []
+
+
+def test_credentials_retrieves_publishable_and_secret_keys(supabase):
+    run, read, write, _, _ = supabase
+    write(
+        {
+            "calls": [],
+            "api_keys": [
+                {
+                    "name": "default",
+                    "type": "publishable",
+                    "api_key": "sb_publishable_test_publishable",
+                },
+                {
+                    "name": "default",
+                    "type": "secret",
+                    "api_key": "sb_secret_test_secret_value",
+                },
+                {
+                    "name": "anon",
+                    "type": "legacy",
+                    "api_key": "eyJlegacy-anon-must-not-win",
+                },
+                {
+                    "name": "service_role",
+                    "type": "legacy",
+                    "api_key": "eyJlegacy-service-must-not-win",
+                },
+            ],
+        }
+    )
+    result = run(
+        "credentials",
+        verbose=True,
+        tasks_after=[
+            {
+                "name": "Assert credentials without printing secrets",
+                "ansible.builtin.assert": {
+                    "that": [
+                        "supabase_credentials_result.project.ref == 'abcdefghijabcdefghij'",
+                        "supabase_credentials_result.project.url == 'https://abcdefghijabcdefghij.supabase.co'",
+                        "supabase_credentials_result.publishable_key == 'sb_publishable_test_publishable'",
+                        "supabase_credentials_result.secret_key == 'sb_secret_test_secret_value'",
+                    ]
+                },
+                "no_log": True,
+            }
+        ],
+    )
+    assert result.returncode == 0, result.stdout
+    assert changed(result) == 0
+    assert "sb_secret_test_secret_value" not in result.stdout
+    assert "dummy-explicit-token" not in result.stdout
+    calls = [call for call in read()["calls"] if call["operation"] == "projects api-keys"]
+    assert len(calls) == 1
+    assert "--reveal" in calls[0]["args"]
+    assert "--project-ref" in calls[0]["args"]
+    assert "abcdefghijabcdefghij" in calls[0]["args"]
+
+
+def test_credentials_fall_back_to_legacy_anon_and_service_role(supabase):
+    run, _, write, _, _ = supabase
+    write(
+        {
+            "calls": [],
+            "api_keys": [
+                {"name": "anon", "type": "legacy", "api_key": "eyJlegacy-anon"},
+                {
+                    "name": "service_role",
+                    "type": "legacy",
+                    "api_key": "eyJlegacy-service",
+                },
+            ],
+        }
+    )
+    result = run(
+        "credentials",
+        tasks_after=[
+            {
+                "name": "Assert legacy key fallback",
+                "ansible.builtin.assert": {
+                    "that": [
+                        "supabase_credentials_result.publishable_key == 'eyJlegacy-anon'",
+                        "supabase_credentials_result.secret_key == 'eyJlegacy-service'",
+                    ]
+                },
+                "no_log": True,
+            }
+        ],
+    )
+    assert result.returncode == 0, result.stdout
+
+
+def test_credentials_missing_keys_fail_without_returning_partial_secrets(supabase):
+    run, read, write, _, _ = supabase
+    write({"calls": [], "api_keys": []})
+    result = run("credentials", verbose=True)
+    assert result.returncode != 0
+    assert "publishable" in result.stdout.lower() or "API key" in result.stdout
+    assert read()["calls"][0]["operation"] == "projects api-keys"
+
+
+def test_credentials_invalid_project_ref_fails_before_cli(supabase):
+    run, read, _, _, _ = supabase
+    result = run(
+        "credentials", overrides={"supabase_project_ref": "not-a-real-ref"}
+    )
+    assert result.returncode != 0
+    assert "20-character lowercase" in result.stdout
     assert read()["calls"] == []
 
 

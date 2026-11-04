@@ -61,6 +61,10 @@ if operation == "projects create":
     if state.get("fail_after_create"):
         finish(code=1)
     finish(row)
+if operation == "projects api-keys":
+    assert "--reveal" in args
+    assert args[args.index("--project-ref") + 1] == "abcdefghijabcdefghij"
+    finish(state.get("api_keys", []))
 
 assert "--remote=abcdefghijabcdefghij" in args
 if operation.startswith("config "):
