@@ -39,8 +39,9 @@ Not an implementation specification.
 - After first production Deployment URL exists, Auth sets Site URL to it and
   allows that origin plus localhost; earlier runs may skip Auth URL updates.
 - The setup playbook owns stage-local Role inputs that would break ordering if
-  set as play-level extra-vars (`vercel_deploy`, `supabase_auth_config`). Callers
-  supply `vercel_git_sha` and `application_auth_config` instead.
+  set as play-level extra-vars (`vercel_deploy`, `supabase_auth_config`, `application_env`). Callers
+  supply `vercel_git_sha`, `application_auth_config`, and `application_env_names`
+  instead; env values come from the retrieved Supabase credentials.
 
 ## Glossary / ADRs touched
 

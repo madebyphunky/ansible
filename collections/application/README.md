@@ -7,7 +7,7 @@ Vercel, and Supabase setup (ADR-0002). Provider API logic stays in
 | Role / playbook | Inputs | Public result |
 | --- | --- | --- |
 | `madebyphunky.application.local_env` | `application_workdir`, `application_env`, optional `application_env_file` | `application_local_env_result` |
-| `playbooks/setup.yml` | Provider Project vars + optional `application_workdir`, `application_auth_config`, `vercel_git_sha` | Composes provider Role results |
+| `playbooks/setup.yml` | Provider Project vars + optional `application_workdir`, `application_auth_config`, `application_env_names`, `vercel_git_sha` | Composes provider Role results |
 
 ## Setup playbook
 
@@ -23,7 +23,8 @@ Vercel, and Supabase setup (ADR-0002). Provider API logic stays in
 6. Auth Site URL + localhost redirects when a Deployment URL is known
 
 Missing later stages print what is still needed and do not fail earlier success.
-Do not set play-level `vercel_deploy` or `supabase_auth_config`; those Role
+Do not set play-level `vercel_deploy`, `supabase_auth_config`, or
+`application_env` (including false/empty values); those Role
 inputs are stage-local and Ansible extra-vars would override the composer. Supply
 `vercel_git_sha` when the exact commit is ready, and `application_auth_config`
 for the declared Auth config.toml.
@@ -47,3 +48,22 @@ Documented default names for Supabase + Next.js:
 
 Install sibling Collections with `python scripts/collection_tools.py install`
 from the repository root.
+
+## Supabase environment names
+
+The setup playbook retrieves values from Supabase and sends the same values to
+Vercel production and the local file. Rename them with a partial
+`application_env_names` map:
+
+```yaml
+application_env_names:
+  url: PUBLIC_SUPABASE_URL
+  publishable_key: PUBLIC_SUPABASE_KEY
+  secret_key: SUPABASE_SERVER_KEY
+```
+
+Omitted entries retain the defaults above. Names must be distinct environment
+identifiers. Keep the secret name server-only: common client prefixes
+(`NEXT_PUBLIC_`, `PUBLIC_`, `VITE_`, `REACT_APP_`, `NUXT_PUBLIC_`) are refused;
+callers must also follow their framework's exposure rules. The standalone
+`local_env` Role still accepts `application_env` values directly.

@@ -253,14 +253,15 @@ def test_setup_deploys_exact_sha_and_updates_auth_site_url(application_setup):
     ]
 
 
-def test_setup_rejects_play_level_vercel_deploy(application_setup):
+@pytest.mark.parametrize("deploy", [True, False])
+def test_setup_rejects_play_level_vercel_deploy(application_setup, deploy):
     run, checkout, _, _, _ = application_setup
     auth = _seed_application_source(checkout)
     result = run(
         {
             "application_workdir": str(checkout),
             "application_auth_config": str(auth),
-            "vercel_deploy": True,
+            "vercel_deploy": deploy,
             "vercel_git_sha": SHA,
         }
     )
@@ -268,13 +269,14 @@ def test_setup_rejects_play_level_vercel_deploy(application_setup):
     assert "Do not set vercel_deploy on the Application setup playbook" in result.stdout
 
 
-def test_setup_rejects_play_level_supabase_auth_config(application_setup):
+@pytest.mark.parametrize("config", ["path", ""])
+def test_setup_rejects_play_level_supabase_auth_config(application_setup, config):
     run, checkout, _, _, _ = application_setup
     auth = _seed_application_source(checkout)
     result = run(
         {
             "application_workdir": str(checkout),
-            "supabase_auth_config": str(auth),
+            "supabase_auth_config": str(auth) if config else "",
             "vercel_git_sha": SHA,
         }
     )
@@ -283,3 +285,67 @@ def test_setup_rejects_play_level_supabase_auth_config(application_setup):
         "Do not set supabase_auth_config on the Application setup playbook"
         in result.stdout
     )
+
+
+def test_setup_maps_retrieved_credentials_to_custom_names(application_setup):
+    run, checkout, read_vercel, _, _ = application_setup
+    result = run(
+        {
+            "application_workdir": str(checkout),
+            "application_env_names": {
+                "url": "PUBLIC_BACKEND_URL",
+                "publishable_key": "PUBLIC_BACKEND_KEY",
+                "secret_key": "BACKEND_SECRET",
+            },
+        },
+        verbose=True,
+    )
+    assert result.returncode == 0, result.stdout
+    assert "sb_secret_test_value" not in result.stdout
+    expected = {
+        "PUBLIC_BACKEND_URL": "https://abcdefghijabcdefghij.supabase.co",
+        "PUBLIC_BACKEND_KEY": "sb_publishable_test",
+        "BACKEND_SECRET": "sb_secret_test_value",
+    }
+    assert (checkout / ".env.local").read_text() == "".join(
+        f"{key}={expected[key]}\n" for key in sorted(expected)
+    )
+    envs = {env["key"]: env for env in read_vercel()["envs"]}
+    assert set(envs) == set(expected)
+    for key, value in expected.items():
+        assert envs[key]["value"] == value
+        assert envs[key]["target"] == ["production"]
+    assert envs["BACKEND_SECRET"]["type"] == "sensitive"
+
+
+@pytest.mark.parametrize(
+    "names",
+    [
+        {"secret_key": "NEXT_PUBLIC_SECRET"},
+        {"secret_key": "VITE_SECRET"},
+        {"secret_key": "NEXT_PUBLIC_SUPABASE_URL"},
+        {"url": "invalid-name"},
+        {"unknown": "EXTRA"},
+    ],
+)
+def test_setup_refuses_invalid_env_names_before_retrieving_secrets(
+    application_setup, names
+):
+    run, checkout, read_vercel, read_supabase, _ = application_setup
+    result = run({"application_workdir": str(checkout), "application_env_names": names})
+    assert result.returncode != 0
+    assert "application_env_names must map" in result.stdout
+    assert not (checkout / ".env.local").exists()
+    assert not read_vercel().get("envs")
+    assert not any(
+        call["operation"] == "projects api-keys" for call in read_supabase()["calls"]
+    )
+
+
+def test_setup_rejects_env_value_override(application_setup):
+    run, _, read_vercel, read_supabase, _ = application_setup
+    result = run({"application_env": {"NEXT_PUBLIC_SECRET": "sb_secret_test_value"}})
+    assert result.returncode != 0
+    assert "Do not set application_env" in result.stdout
+    assert not read_vercel()["calls"]
+    assert not read_supabase()["calls"]

@@ -23,7 +23,7 @@
     - name: Refuse play-level vercel_deploy so stages stay ordered
       ansible.builtin.assert:
         that:
-          - not (vercel_deploy | default(false) | bool)
+          - vercel_deploy is undefined
         fail_msg: >-
           Do not set vercel_deploy on the Application setup playbook. Supply
           vercel_git_sha (exact 40-character commit) when ready to publish; the
@@ -33,12 +33,21 @@
     - name: Refuse play-level supabase_auth_config so Auth URL updates can run
       ansible.builtin.assert:
         that:
-          - (supabase_auth_config | default('')) | length == 0
+          - supabase_auth_config is undefined
         fail_msg: >-
           Do not set supabase_auth_config on the Application setup playbook.
           Supply application_auth_config instead; the playbook passes that path
           into madebyphunky.supabase.auth and must override it after Deployment
           to set the Auth Site URL (extra-vars would win otherwise).
+      when: not ansible_check_mode
+
+    - name: Refuse play-level application_env so retrieved credentials reach both destinations
+      ansible.builtin.assert:
+        that:
+          - application_env is undefined
+        fail_msg: >-
+          Do not set application_env on the Application setup playbook.
+          Supply application_env_names to rename the retrieved Supabase values.
       when: not ansible_check_mode
 
     - name: Ensure the Vercel Project and GitHub repository link
@@ -155,6 +164,35 @@
         - not ansible_check_mode
         - not (_application_workdir_ready | bool)
 
+    - name: Resolve the Supabase environment name map
+      ansible.builtin.set_fact:
+        _application_env_names: >-
+          {{
+            {
+              'url': 'NEXT_PUBLIC_SUPABASE_URL',
+              'publishable_key': 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+              'secret_key': 'SUPABASE_SECRET_KEY'
+            } | combine(application_env_names | default({}))
+          }}
+      when:
+        - not ansible_check_mode
+        - _application_workdir_ready | bool
+
+    - name: Validate the Supabase environment name map
+      ansible.builtin.assert:
+        that:
+          - _application_env_names.keys() | sort == ['publishable_key', 'secret_key', 'url']
+          - _application_env_names.values() | select('string') | list | length == 3
+          - _application_env_names.values() | select('match', '^[A-Za-z_][A-Za-z0-9_]*$') | list | length == 3
+          - _application_env_names.values() | unique | list | length == 3
+          - _application_env_names.secret_key is not match('^(NEXT_PUBLIC_|PUBLIC_|VITE_|REACT_APP_|NUXT_PUBLIC_)')
+        fail_msg: >-
+          application_env_names must map url, publishable_key, and secret_key to
+          distinct environment names; the secret key must use a server-only name.
+      when:
+        - not ansible_check_mode
+        - _application_workdir_ready | bool
+
     - name: Retrieve Supabase Project URL and API keys
       ansible.builtin.include_role:
         name: madebyphunky.supabase.credentials
@@ -164,13 +202,13 @@
 
     - name: Map retrieved credentials into Application env names
       ansible.builtin.set_fact:
-        application_env: >-
+        _application_resolved_env: >-
           {{
             {
-              'NEXT_PUBLIC_SUPABASE_URL': supabase_credentials_result.project.url,
-              'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY': supabase_credentials_result.publishable_key,
-              'SUPABASE_SECRET_KEY': supabase_credentials_result.secret_key
-            } | combine(application_env | default({}))
+              _application_env_names.url: supabase_credentials_result.project.url,
+              _application_env_names.publishable_key: supabase_credentials_result.publishable_key,
+              _application_env_names.secret_key: supabase_credentials_result.secret_key
+            }
           }}
       no_log: true
       when:
@@ -182,21 +220,23 @@
       ansible.builtin.include_role:
         name: madebyphunky.vercel.env
       vars:
-        vercel_env: "{{ application_env }}"
+        vercel_env: "{{ _application_resolved_env }}"
       no_log: true
       when:
         - not ansible_check_mode
         - _application_workdir_ready | bool
-        - application_env is defined
+        - _application_resolved_env is defined
 
     - name: Write gitignored local .env.local
       ansible.builtin.include_role:
         name: madebyphunky.application.local_env
+      vars:
+        application_env: "{{ _application_resolved_env }}"
       no_log: true
       when:
         - not ansible_check_mode
         - _application_workdir_ready | bool
-        - application_env is defined
+        - _application_resolved_env is defined
 
     - name: Skip production Deployment until an exact git SHA is supplied
       ansible.builtin.debug:
