@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Copyright: (c) 2026, madebyphunky
 # MIT License (see LICENSE)
-"""CLI boundary shared by the three public hosted Supabase Roles."""
+"""CLI boundary shared by the public hosted Supabase Roles."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ module: operation
 short_description: Run a scoped hosted Supabase CLI operation
 version_added: '0.1.0'
 description:
-  - Internal CLI boundary used by the public project, auth, and migrations Roles.
+  - Internal CLI boundary used by the public project, auth, migrations, and credentials Roles.
   - Requires Python 3.11 or later for TOML configuration parsing.
   - Check mode validates locally without invoking npx or downloading packages.
 author: [madebyphunky]
@@ -32,7 +32,7 @@ options:
     description: Public Role operation.
     type: str
     required: true
-    choices: [project, auth, migrations]
+    choices: [project, auth, migrations, credentials]
   access_token:
     description: Supabase access token.
     type: str
@@ -574,6 +574,50 @@ class Supabase:
             )
         self.result["migrations_applied"] = self.changed
 
+    def select_api_key(self, rows, preferred_type, legacy_name):
+        preferred = [
+            row
+            for row in rows
+            if isinstance(row, dict)
+            and row.get("type") == preferred_type
+            and (row.get("api_key") or "").strip()
+        ]
+        preferred.sort(key=lambda row: 0 if row.get("name") == "default" else 1)
+        if preferred:
+            return preferred[0]["api_key"]
+        legacy = [
+            row
+            for row in rows
+            if isinstance(row, dict)
+            and row.get("type") == "legacy"
+            and row.get("name") == legacy_name
+            and (row.get("api_key") or "").strip()
+        ]
+        if legacy:
+            return legacy[0]["api_key"]
+        return None
+
+    def credentials(self):
+        ref = self.p["project_ref"]
+        rows = self.json_cli(
+            ["projects", "api-keys", "--project-ref", ref, "--reveal"]
+        )
+        if not isinstance(rows, list):
+            raise CliError("Unsupported CLI API key response")
+        publishable = self.select_api_key(rows, "publishable", "anon")
+        secret = self.select_api_key(rows, "secret", "service_role")
+        if not publishable or not secret:
+            raise CliError(
+                "Project API keys must include a publishable key and a secret key"
+            )
+        self.result["project"] = {
+            "ref": ref,
+            "url": "https://" + ref + ".supabase.co",
+        }
+        self.result["publishable_key"] = publishable
+        self.result["secret_key"] = secret
+        self.changed = False
+
     def run(self):
         self.validate()
         if self.p["validate_only"]:
@@ -592,8 +636,10 @@ class Supabase:
                 self.project()
             elif self.p["operation"] == "auth":
                 self.auth_config()
-            else:
+            elif self.p["operation"] == "migrations":
                 self.migrations()
+            else:
+                self.credentials()
 
 
 def main():
@@ -602,7 +648,7 @@ def main():
             "operation": {
                 "type": "str",
                 "required": True,
-                "choices": ["project", "auth", "migrations"],
+                "choices": ["project", "auth", "migrations", "credentials"],
             },
             "access_token": {"type": "str", "required": True, "no_log": True},
             "db_password": {"type": "str", "no_log": True},

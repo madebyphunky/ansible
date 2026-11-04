@@ -1,6 +1,6 @@
 # madebyphunky.supabase
 
-Three independently runnable Roles for hosted Supabase, using
+Independently runnable Roles for hosted Supabase, using
 `npx --yes supabase@latest`. Set `supabase_cli_version` to an explicit version
 when required. The first version follows the CLI v3 command and JSON contracts;
 older versions are unsupported. Structured responses are validated against that
@@ -13,6 +13,7 @@ retain any partial provider changes for inspection rather than retrying blindly.
 | `madebyphunky.supabase.project` | `supabase_organization`, `supabase_project_name`, creation `supabase_region` and `supabase_project_password`, optional `supabase_project_ref` | `supabase_project_result` |
 | `madebyphunky.supabase.auth` | `supabase_project_ref`, `supabase_auth_config` (path to config.toml) | `supabase_auth_result` |
 | `madebyphunky.supabase.migrations` | `supabase_project_ref`, `supabase_workdir` (application checkout), `SUPABASE_DB_PASSWORD` | `supabase_migrations_result` |
+| `madebyphunky.supabase.credentials` | `supabase_project_ref` | `supabase_credentials_result` |
 
 Run locally with Ansible Core 2.18/2.19 and Python 3.11+ (3.12 tested).
 The Roles compose `madebyphunky.nodejs.setup` for Node.js/npm/npx on macOS or
@@ -69,7 +70,18 @@ and `supabase_poll_interval: 5` by default. Timeout or failure retains resources
 there is no rollback or automatic creation retry. Nonsecret identities remain in
 the result when known; passwords are never returned, including on partial
 failure. If creation is indeterminate, inspect the selected organization before
-rerunning. No API keys or connection strings are retrieved.
+rerunning. Connection strings and the full Marketplace `POSTGRES_*` variable set
+are not retrieved.
+
+## Credentials retrieval
+
+`madebyphunky.supabase.credentials` retrieves the Project URL plus publishable and
+secret API keys for an exact `supabase_project_ref` via
+`supabase projects api-keys --reveal`. Prefer new publishable/secret keys named
+`default`; fall back to legacy `anon` / `service_role` when those are absent.
+Module and result publication tasks use `no_log`; composers read
+`supabase_credentials_result` deliberately. Do not debug that fact. Postgres
+connection strings remain out of scope.
 
 ## Auth configuration
 
