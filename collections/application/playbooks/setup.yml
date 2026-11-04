@@ -216,6 +216,16 @@
         - not ansible_check_mode
         - _application_deploy_ready | bool
 
+    - name: Skip Auth URL update until a production Deployment is ready
+      ansible.builtin.debug:
+        msg: >-
+          Skipping Auth Site URL update; set vercel_git_sha to publish a
+          production Deployment first, then re-run so Site URL and redirects
+          can use vercel_project_result.deployment.url (plus localhost).
+      when:
+        - not ansible_check_mode
+        - not (_application_deploy_ready | bool)
+
     - name: Skip Auth URL update until a production Deployment URL exists
       ansible.builtin.debug:
         msg: >-

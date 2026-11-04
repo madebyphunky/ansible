@@ -89,7 +89,7 @@ on 2026-11-03, including verified cleanup. See [Supabase verification](docs/supa
 for the tested commit, versions, coverage, and limitations.
 
 Application setup design is recorded in
-[project creation](docs/design/project-creation.md). The
+[Application setup design](docs/design/project-creation.md). The
 `madebyphunky.application` Collection README documents the phased setup
 playbook. Credential-free stage-gating contracts live in
 `tests/test_application_setup_playbook.py`. Multi-provider live expectations and

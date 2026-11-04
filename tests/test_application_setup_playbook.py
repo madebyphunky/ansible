@@ -168,10 +168,11 @@ def test_setup_infra_only_stops_cleanly_without_source(application_setup):
     run, _, read_vercel, read_supabase, _ = application_setup
     result = run()
     assert result.returncode == 0, result.stdout
-    assert "Skipping migrations" in result.stdout
-    assert "Skipping Auth" in result.stdout
+    assert "Skipping migrations; set application_workdir" in result.stdout
+    assert "Skipping Auth; set application_auth_config" in result.stdout
     assert "Skipping env wiring" in result.stdout
     assert "Skipping production Deployment" in result.stdout
+    assert "Skipping Auth Site URL update" in result.stdout
     assert read_vercel()["project"]["name"] == "test-project"
     assert read_supabase()["projects"][0]["ref"] == "abcdefghijabcdefghij"
     assert not any(
@@ -204,11 +205,11 @@ def test_setup_continues_through_env_when_workdir_ready(application_setup):
         verbose=True,
     )
     assert result.returncode == 0, result.stdout
-    assert "Skipping migrations" not in result.stdout
-    assert "Skipping Auth" not in result.stdout
+    assert "Skipping migrations; set application_workdir" not in result.stdout
+    assert "Skipping Auth; set application_auth_config" not in result.stdout
     assert "Skipping env wiring" not in result.stdout
     assert "Skipping production Deployment" in result.stdout
-    assert "Skipping Auth Site URL update" not in result.stdout
+    assert "Skipping Auth Site URL update" in result.stdout
     assert "sb_secret_test_value" not in result.stdout
     assert (checkout / ".env.local").exists()
     assert (
