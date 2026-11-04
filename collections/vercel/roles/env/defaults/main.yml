@@ -1,0 +1,7 @@
+---
+vercel_env: {}
+vercel_env_target: production
+vercel_env_timeout: 900
+vercel_manage_prerequisites: true
+vercel_npx_executable: npx
+vercel_node_executable: node

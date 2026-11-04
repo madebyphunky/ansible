@@ -104,6 +104,39 @@ if route == "/v11/projects" and method == "POST":
         project["link"] = {"type": "github", "org": owner, "repo": repository}
     data["project"] = project
     reply(project, 201)
+if "/env" in route and (
+    route.startswith("/v9/projects/") or route.startswith("/v10/projects/")
+):
+    project = data.get("project")
+    if project is None:
+        reply({"error": {"message": "Not Found"}}, 404)
+    envs = data.setdefault("envs", [])
+    if method == "GET" and route.endswith("/env"):
+        visible = []
+        for item in envs:
+            row = dict(item)
+            if row.get("type") == "sensitive":
+                row["value"] = None
+            visible.append(row)
+        reply({"envs": visible})
+    if method == "POST" and route.endswith("/env"):
+        created = dict(body)
+        created.setdefault("id", "env_" + str(len(envs) + 1))
+        envs.append(dict(created))
+        response = dict(created)
+        if response.get("type") == "sensitive":
+            response["value"] = None
+        reply(response, 201)
+    if method == "PATCH" and "/env/" in route:
+        env_id = route.rstrip("/").split("/")[-1]
+        existing = next((item for item in envs if item.get("id") == env_id), None)
+        if existing is None:
+            reply({"error": {"message": "Env Not Found"}}, 404)
+        existing.update(body)
+        if existing.get("type") == "sensitive":
+            existing["value"] = body.get("value", existing.get("value"))
+        reply(existing)
+    reply({"error": {"message": "Unhandled env route " + route}}, 500)
 if route.startswith("/v9/projects/"):
     project = data.get("project")
     if project is None:

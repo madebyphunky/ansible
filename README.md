@@ -7,7 +7,7 @@ root contains shared tooling and documentation.
 | Collection | Public Role | Purpose |
 | --- | --- | --- |
 | `madebyphunky.gandi` | `madebyphunky.gandi.livedns` | Converge explicitly owned Gandi LiveDNS record sets. |
-| `madebyphunky.vercel` | `madebyphunky.vercel.project` | Ensure a Vercel Project and optional GitHub repository/production deployment. |
+| `madebyphunky.vercel` | `madebyphunky.vercel.project`, `.env` | Ensure a Vercel Project, optional GitHub repository/production deployment, and production application environment variables. |
 | `madebyphunky.github` | `madebyphunky.github.cli` | Ensure GitHub CLI is available. |
 | `madebyphunky.supabase` | `madebyphunky.supabase.project`, `.auth`, `.migrations`, `.credentials` | Ensure hosted Projects, configure Auth, apply SQL migrations, and retrieve Project URL/API keys through the CLI. |
 | `madebyphunky.nodejs` | `madebyphunky.nodejs.setup` | Ensure a compatible Node.js runtime, npm, and npx are available. |

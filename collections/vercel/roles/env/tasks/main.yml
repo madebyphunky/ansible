@@ -1,0 +1,43 @@
+---
+- name: Validate and converge production environment variables
+  block:
+    - name: Validate complete input before changing the host or provider
+      madebyphunky.vercel.env: &env_parameters
+        name: "{{ vercel_project_name }}"
+        scope_type: "{{ vercel_scope_type }}"
+        scope_id: "{{ vercel_scope_id }}"
+        variables: "{{ vercel_env }}"
+        target: "{{ vercel_env_target }}"
+        vercel_token: "{{ VERCEL_TOKEN | default(lookup('ansible.builtin.env', 'VERCEL_TOKEN')) }}"
+        timeout: "{{ vercel_env_timeout }}"
+        npx_executable: "{{ nodejs_runtime.npx_path | default(vercel_npx_executable) if vercel_manage_prerequisites else vercel_npx_executable }}"
+        node_executable: "{{ nodejs_runtime.node_path | default(vercel_node_executable) if vercel_manage_prerequisites else vercel_node_executable }}"
+      check_mode: true
+      changed_when: false
+      no_log: true
+      register: _vercel_env_operation
+
+    - name: Ensure the Node.js runtime is available
+      ansible.builtin.include_role:
+        name: madebyphunky.nodejs.setup
+      when: vercel_manage_prerequisites
+
+    - name: Ensure production environment variables
+      madebyphunky.vercel.env: *env_parameters
+      no_log: true
+      register: _vercel_env_operation
+
+    - name: Expose sanitized environment results
+      ansible.builtin.set_fact:
+        vercel_env_result: "{{ _vercel_env_operation.result }}"
+      no_log: true
+  rescue:
+    - name: Preserve sanitized partial environment results
+      ansible.builtin.set_fact:
+        vercel_env_result: "{{ _vercel_env_operation.result | default({}) }}"
+      no_log: true
+
+    - name: Report the environment operation failure
+      ansible.builtin.fail:
+        msg: >-
+          {{ _vercel_env_operation.msg | default('Environment prerequisite setup failed; see the failing task') }}
