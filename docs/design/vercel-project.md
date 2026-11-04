@@ -45,7 +45,8 @@ implementation. See the provider-scoped Collections ADR for public naming.
   The deployment option controls the Role's explicit request during a run.
 - Custom domains and DNS remain outside the Project Role. Application environment
   variables are owned by `madebyphunky.vercel.env` (production target only; never
-  Preview-scoped).
+  Preview-scoped)—not a Collection-wide exclusion. Application setup composition
+  is recorded in `docs/design/project-creation.md`.
 
 ## Explicit deployment
 

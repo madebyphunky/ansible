@@ -92,7 +92,10 @@ a changed setting requires a new deployment. Failed work requires explicit retry
 On failure or timeout, created resources remain for inspection/resumption. The
 Role does not automatically roll back or delete resources. Custom domains and
 application scaffolding are outside the Project Role. Application environment
-variables are owned by `madebyphunky.vercel.env` (production target only).
+variables are owned by `madebyphunky.vercel.env` (production target only)—not
+excluded from the Collection. Cross-provider Application setup composes this
+Role with Supabase and local env wiring through `madebyphunky.application`
+(`docs/design/project-creation.md`).
 
 ## Check mode and results
 
@@ -113,4 +116,6 @@ these identifiers for inspection.
 
 Local Vercel/GitHub acceptance passed on 2026-11-02, including exact-commit
 deployment, historical production promotion, idempotence, and verified cleanup.
-See the repository live-verification guide for evidence and protected CI setup.
+See [Vercel live verification](../../docs/vercel-live-verification.md). Multi-provider
+Application setup live expectations (pending until recorded) are in
+[Application live verification](../../docs/application-live-verification.md).

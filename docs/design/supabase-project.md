@@ -70,7 +70,10 @@ or simulated CLI test does not satisfy the live gate.
 - `madebyphunky.supabase.credentials` retrieves Project URL plus publishable and
   secret API keys for an exact project reference via
   `projects api-keys --reveal`. Prefer new publishable/secret keys; fall back to
-  legacy anon/service_role. Do not retrieve Postgres connection strings.
+  legacy anon/service_role. Do not retrieve Postgres connection strings. Key/URL
+  retrieval is in scope for Application wiring; see
+  `docs/design/project-creation.md` for composition with Vercel env and local
+  `.env.local`.
 
 ## Auth
 
