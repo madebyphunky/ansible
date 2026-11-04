@@ -10,7 +10,9 @@ from urllib.parse import parse_qs, urlsplit
 path = Path(os.environ["VERCEL_CONTRACT_STATE"])
 data = json.loads(path.read_text())
 args = sys.argv[1:]
-provider = "vercel" if Path(sys.argv[0]).name == "npx" else "github"
+provider = os.environ.get("APPLICATION_FIXTURE_PROVIDER")
+if provider is None:
+    provider = "vercel" if Path(sys.argv[0]).name == "npx" else "github"
 endpoint = args[args.index("api") + 1]
 method = args[args.index("--method") + 1]
 body = json.load(sys.stdin) if "--input" in args else None
@@ -49,7 +51,9 @@ if provider == "github":
     if route.startswith("/users/"):
         owner = route.split("/")[-1]
         reply({"login": owner, "type": data.get("owner_type", "User")})
-    if method == "POST":
+    if method == "POST" and (
+        route.endswith("/repos") or route.startswith("/orgs/") or route.startswith("/user/")
+    ):
         owner = (
             route.split("/")[2]
             if route.startswith("/orgs/")
@@ -58,7 +62,7 @@ if provider == "github":
         repo = {
             "id": 101,
             "full_name": owner + "/" + body["name"],
-            "private": body["private"],
+            "private": body.get("private", True),
             "html_url": "https://github.com/" + owner + "/" + body["name"],
         }
         data["repository"] = repo
