@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def installed(tmp_path_factory):
     directory = tmp_path_factory.mktemp("installed")
     # Force every package into the isolated path even if CI has the same version installed.
-    for name in ("nodejs", "github", "gandi", "vercel", "supabase"):
+    for name in ("nodejs", "github", "gandi", "vercel", "supabase", "application"):
         subprocess.run(
             [
                 "ansible-galaxy",

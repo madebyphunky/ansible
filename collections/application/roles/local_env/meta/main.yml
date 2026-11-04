@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: madebyphunky
+  description: Write a gitignored local Application environment file.
+  license: MIT
+  min_ansible_version: '2.18'
+dependencies: []
