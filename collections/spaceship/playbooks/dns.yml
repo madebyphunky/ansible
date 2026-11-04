@@ -1,0 +1,6 @@
+---
+- name: Manage explicitly declared Spaceship DNS records
+  hosts: "{{ target_hosts | default('localhost') }}"
+  gather_facts: false
+  roles:
+    - role: madebyphunky.spaceship.dns

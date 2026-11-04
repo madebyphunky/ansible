@@ -1,0 +1,21 @@
+---
+namespace: madebyphunky
+name: spaceship
+version: 0.1.0
+readme: README.md
+authors:
+  - madebyphunky
+description: Explicitly owned Spaceship DNS record sets.
+license:
+  - MIT
+tags:
+  - infrastructure
+  - dns
+  - spaceship
+repository: https://github.com/madebyphunky/ansible
+issues: https://github.com/madebyphunky/ansible/issues
+dependencies: {}
+build_ignore:
+  - .cache
+  - .ansible
+  - '*.tar.gz'

@@ -6,6 +6,7 @@ root contains shared tooling and documentation.
 
 | Collection | Public Role | Purpose |
 | --- | --- | --- |
+| `madebyphunky.spaceship` | `madebyphunky.spaceship.dns` | Converge explicitly owned Spaceship DNS record sets. |
 | `madebyphunky.gandi` | `madebyphunky.gandi.livedns` | Converge explicitly owned Gandi LiveDNS record sets. |
 | `madebyphunky.vercel` | `madebyphunky.vercel.project`, `.env` | Ensure a Vercel Project, optional GitHub repository/production deployment, and production application environment variables. |
 | `madebyphunky.github` | `madebyphunky.github.cli` | Ensure GitHub CLI is available. |
@@ -59,6 +60,11 @@ for the creation CLI process-argument tradeoff.
 Gandi uses `gandi_livedns_personal_access_token`, falling back to
 `GANDI_LIVEDNS_PERSONAL_ACCESS_TOKEN`. Never commit tokens, secret environment files,
 vault files containing credentials, or real credentials in examples.
+
+Spaceship uses `spaceship_dns_api_key` and `spaceship_dns_api_secret`, falling
+back independently to `SPACESHIP_API_KEY` and `SPACESHIP_API_SECRET`. Its module
+requires `dnspython >= 2.7` in the executing Python interpreter. See the
+[Spaceship guide](collections/spaceship/README.md).
 
 ## Development
 
