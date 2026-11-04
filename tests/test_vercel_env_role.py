@@ -101,10 +101,11 @@ def test_env_creates_production_variables_and_redacts_secrets(vercel_env):
     assert envs["NEXT_PUBLIC_SUPABASE_URL"]["type"] == "encrypted"
     assert all(item["target"] == ["production"] for item in read()["envs"])
     assert not any(
-        "preview" in call.get("body", {})
-        if isinstance(call.get("body"), dict)
-        else "preview"
-        in json.dumps(call.get("body") or [])
+        (
+            "preview" in call.get("body", {})
+            if isinstance(call.get("body"), dict)
+            else "preview" in json.dumps(call.get("body") or [])
+        )
         for call in read()["calls"]
         if call["method"] in ("POST", "PATCH")
     )

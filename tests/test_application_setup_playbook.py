@@ -9,9 +9,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-PLAYBOOK = (
-    "ansible_collections/madebyphunky/application/playbooks/setup.yml"
-)
+PLAYBOOK = "ansible_collections/madebyphunky/application/playbooks/setup.yml"
 SHA = "a" * 40
 
 
@@ -197,7 +195,6 @@ def test_setup_continues_through_env_when_workdir_ready(application_setup):
         {
             "application_workdir": str(checkout),
             "supabase_auth_config": str(auth),
-            "SUPABASE_DB_PASSWORD": "caller-password-0123456789",
         },
         verbose=True,
     )
@@ -205,16 +202,15 @@ def test_setup_continues_through_env_when_workdir_ready(application_setup):
     assert "Skipping migrations" not in result.stdout
     assert "sb_secret_test_value" not in result.stdout
     assert (checkout / ".env.local").exists()
-    assert "SUPABASE_SECRET_KEY=sb_secret_test_value" in (
-        checkout / ".env.local"
-    ).read_text()
+    assert (
+        "SUPABASE_SECRET_KEY=sb_secret_test_value"
+        in (checkout / ".env.local").read_text()
+    )
     assert {item["key"] for item in read_vercel()["envs"]} >= {
         "NEXT_PUBLIC_SUPABASE_URL",
         "SUPABASE_SECRET_KEY",
     }
-    assert any(
-        call["operation"] == "db push" for call in read_supabase()["calls"]
-    )
+    assert any(call["operation"] == "db push" for call in read_supabase()["calls"])
     assert any(
         call["operation"] == "projects api-keys" for call in read_supabase()["calls"]
     )

@@ -52,7 +52,9 @@ if provider == "github":
         owner = route.split("/")[-1]
         reply({"login": owner, "type": data.get("owner_type", "User")})
     if method == "POST" and (
-        route.endswith("/repos") or route.startswith("/orgs/") or route.startswith("/user/")
+        route.endswith("/repos")
+        or route.startswith("/orgs/")
+        or route.startswith("/user/")
     ):
         owner = (
             route.split("/")[2]

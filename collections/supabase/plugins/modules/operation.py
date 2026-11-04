@@ -599,9 +599,7 @@ class Supabase:
 
     def credentials(self):
         ref = self.p["project_ref"]
-        rows = self.json_cli(
-            ["projects", "api-keys", "--project-ref", ref, "--reveal"]
-        )
+        rows = self.json_cli(["projects", "api-keys", "--project-ref", ref, "--reveal"])
         if not isinstance(rows, list):
             raise CliError("Unsupported CLI API key response")
         publishable = self.select_api_key(rows, "publishable", "anon")

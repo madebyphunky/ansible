@@ -245,9 +245,7 @@ class Environment:
         return "encrypted" if key.startswith("NEXT_PUBLIC_") else "sensitive"
 
     def list_envs(self, project_id):
-        response = self.request(
-            "/v10/projects/" + quote(project_id, safe="") + "/env"
-        )
+        response = self.request("/v10/projects/" + quote(project_id, safe="") + "/env")
         if isinstance(response, list):
             return response
         if isinstance(response, dict):
@@ -315,9 +313,7 @@ class Environment:
                 }
                 if existing is None:
                     self.request(
-                        "/v10/projects/"
-                        + quote(project["id"], safe="")
-                        + "/env",
+                        "/v10/projects/" + quote(project["id"], safe="") + "/env",
                         method="POST",
                         body=payload,
                     )
@@ -339,7 +335,11 @@ class Environment:
                         + "/env/"
                         + quote(existing["id"], safe=""),
                         method="PATCH",
-                        body={"value": value, "type": var_type, "target": ["production"]},
+                        body={
+                            "value": value,
+                            "type": var_type,
+                            "target": ["production"],
+                        },
                     )
                     self.action("update:" + key)
                     self.result["updated"].append(key)

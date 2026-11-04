@@ -27,8 +27,6 @@
     - name: Ensure the hosted Supabase Project
       ansible.builtin.include_role:
         name: madebyphunky.supabase.project
-      vars:
-        supabase_project_password: "{{ supabase_project_password | default(omit) }}"
 
     - name: Select the Supabase Project reference for later stages
       ansible.builtin.set_fact:
@@ -98,7 +96,7 @@
         name: madebyphunky.supabase.migrations
       vars:
         supabase_workdir: "{{ application_workdir }}"
-        SUPABASE_DB_PASSWORD: "{{ SUPABASE_DB_PASSWORD | default(supabase_project_password) }}"
+        SUPABASE_DB_PASSWORD: "{{ database_password | default(supabase_project_password) }}"
       when:
         - not ansible_check_mode
         - _application_migrations_ready | bool

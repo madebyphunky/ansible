@@ -243,7 +243,9 @@ def test_credentials_retrieves_publishable_and_secret_keys(supabase):
     assert changed(result) == 0
     assert "sb_secret_test_secret_value" not in result.stdout
     assert "dummy-explicit-token" not in result.stdout
-    calls = [call for call in read()["calls"] if call["operation"] == "projects api-keys"]
+    calls = [
+        call for call in read()["calls"] if call["operation"] == "projects api-keys"
+    ]
     assert len(calls) == 1
     assert "--reveal" in calls[0]["args"]
     assert "--project-ref" in calls[0]["args"]
@@ -294,9 +296,7 @@ def test_credentials_missing_keys_fail_without_returning_partial_secrets(supabas
 
 def test_credentials_invalid_project_ref_fails_before_cli(supabase):
     run, read, _, _, _ = supabase
-    result = run(
-        "credentials", overrides={"supabase_project_ref": "not-a-real-ref"}
-    )
+    result = run("credentials", overrides={"supabase_project_ref": "not-a-real-ref"})
     assert result.returncode != 0
     assert "20-character lowercase" in result.stdout
     assert read()["calls"] == []

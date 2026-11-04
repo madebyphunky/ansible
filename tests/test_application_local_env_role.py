@@ -43,7 +43,9 @@ def application_env(installed, tmp_path):
                 [
                     {
                         "name": "Read public local env result",
-                        "ansible.builtin.debug": {"var": "application_local_env_result"},
+                        "ansible.builtin.debug": {
+                            "var": "application_local_env_result"
+                        },
                     }
                 ],
             ),
@@ -60,7 +62,9 @@ def test_local_env_writes_gitignored_dotenv_and_redacts_secrets(application_env)
     assert changed(result) == 1
     assert "sb_secret_test_value" not in result.stdout
     content = (checkout / ".env.local").read_text()
-    assert "NEXT_PUBLIC_SUPABASE_URL=https://abcdefghijabcdefghij.supabase.co" in content
+    assert (
+        "NEXT_PUBLIC_SUPABASE_URL=https://abcdefghijabcdefghij.supabase.co" in content
+    )
     assert "SUPABASE_SECRET_KEY=sb_secret_test_value" in content
     second = run()
     assert second.returncode == 0, second.stdout
