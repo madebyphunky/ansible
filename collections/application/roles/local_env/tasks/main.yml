@@ -1,0 +1,74 @@
+---
+- name: Validate and write the local Application environment file
+  vars:
+    _application_env_path: "{{ application_workdir }}/{{ application_env_file }}"
+  block:
+    - name: Require an application checkout directory
+      ansible.builtin.stat:
+        path: "{{ application_workdir }}"
+      register: _application_workdir_stat
+
+    - name: Fail when the application checkout is missing
+      ansible.builtin.fail:
+        msg: Supply an existing application_workdir checkout
+      when: not _application_workdir_stat.stat.exists or not _application_workdir_stat.stat.isdir
+
+    - name: Require a non-empty environment map
+      ansible.builtin.fail:
+        msg: Supply at least one application_env variable
+      when: application_env is not mapping or (application_env | length) == 0
+
+    - name: Require a relative environment file path
+      ansible.builtin.fail:
+        msg: application_env_file must be a relative path inside the checkout
+      when: application_env_file.startswith('/') or '..' in application_env_file.split('/')
+
+    - name: Verify the environment file path is gitignored
+      ansible.builtin.command:
+        argv:
+          - git
+          - check-ignore
+          - -q
+          - "--"
+          - "{{ application_env_file }}"
+        chdir: "{{ application_workdir }}"
+      register: _application_env_ignored
+      changed_when: false
+      failed_when: false
+
+    - name: Fail when the environment file is not gitignored
+      ansible.builtin.fail:
+        msg: >-
+          Refusing to write {{ application_env_file }}; add it to .gitignore
+          (git check-ignore must match the path)
+      when: _application_env_ignored.rc != 0
+
+    - name: Build dotenv file content
+      ansible.builtin.set_fact:
+        _application_env_body: "{% for key in application_env.keys() | sort %}{{ key }}={{ application_env[key] }}\n{% endfor %}"
+      no_log: true
+
+    - name: Write the gitignored local environment file
+      ansible.builtin.copy:
+        dest: "{{ _application_env_path }}"
+        content: "{{ _application_env_body }}"
+        mode: "0600"
+      no_log: true
+      register: _application_env_write
+
+    - name: Publish local environment result
+      ansible.builtin.set_fact:
+        application_local_env_result:
+          path: "{{ _application_env_path }}"
+          keys: "{{ application_env.keys() | list | sort }}"
+          changed: "{{ _application_env_write is changed }}"
+  rescue:
+    - name: Publish partial local environment result
+      ansible.builtin.set_fact:
+        application_local_env_result: "{{ application_local_env_result | default({}) }}"
+
+    - name: Report local environment failure
+      ansible.builtin.fail:
+        msg: >-
+          {{ ansible_failed_result.msg |
+              default('Local environment file setup failed; see the failing task') }}

@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: Write a gitignored local Application environment file.
+    options:
+      application_workdir:
+        type: path
+        required: true
+        description: Application checkout that will receive the env file.
+      application_env:
+        type: dict
+        required: true
+        no_log: true
+        description: Map of environment variable names to values.
+      application_env_file:
+        type: str
+        description: Relative env file path within the checkout; defaults to .env.local.
