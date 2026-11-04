@@ -1,0 +1,7 @@
+---
+- name: Prepare an existing VPS for Kamal
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - madebyphunky.kamal.setup

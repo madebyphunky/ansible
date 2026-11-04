@@ -33,7 +33,7 @@ Gandi bearer credential for LiveDNS (`Authorization: Bearer …`). The only auth
 _Avoid_: API key, Apikey
 
 **Application**:
-The product being built, with source hosted on GitHub, frontend on Vercel, and backend on Supabase.
+The product being built, independent of its source host, hosting providers, or deployment tooling.
 _Avoid_: project (when referring to the whole product rather than a provider Project)
 
 **Infrastructure setup**:

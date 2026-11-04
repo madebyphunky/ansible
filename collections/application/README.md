@@ -67,3 +67,19 @@ identifiers. Keep the secret name server-only: common client prefixes
 (`NEXT_PUBLIC_`, `PUBLIC_`, `VITE_`, `REACT_APP_`, `NUXT_PUBLIC_`) are refused;
 callers must also follow their framework's exposure rules. The standalone
 `local_env` Role still accepts `application_env` values directly.
+
+## Optional Kamal server preparation
+
+`madebyphunky.application.kamal_setup` is a separate thin composer for an existing
+VPS; it does not run the Vercel/Supabase setup flow. Run it with:
+
+```sh
+ansible-playbook madebyphunky.application.kamal_setup -e @kamal-vars.yml
+```
+
+Supply the `kamal_*` inputs documented in the Kamal Collection. Omit
+`application_kamal_dns_provider` for server preparation alone, or set it to
+`gandi` or `spaceship` and supply that provider Role's ordinary zone, explicit
+record sets, and credentials. The selected DNS Role runs before server setup;
+its failure stops the play. Check mode predicts DNS and Docker changes without
+mutating either. CI owns all Application deployments, including the first.

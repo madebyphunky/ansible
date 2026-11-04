@@ -1,0 +1,13 @@
+---
+namespace: madebyphunky
+name: kamal
+version: 0.1.0
+readme: README.md
+authors: [madebyphunky]
+description: Prepare existing VPS hosts for Kamal using native server bootstrap.
+license: [MIT]
+tags: [infrastructure, application]
+repository: https://github.com/madebyphunky/ansible
+issues: https://github.com/madebyphunky/ansible/issues
+dependencies: {}
+build_ignore: [.cache, .ansible, '*.tar.gz']

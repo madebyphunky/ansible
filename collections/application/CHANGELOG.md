@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+- Add optional DNS composition and Kamal server preparation playbook; CI owns deployments.
+
 ## 0.1.0
 
 - Initial Application Collection with local `.env.local` writing Role.

@@ -12,6 +12,7 @@ root contains shared tooling and documentation.
 | `madebyphunky.github` | `madebyphunky.github.cli` | Ensure GitHub CLI is available. |
 | `madebyphunky.supabase` | `madebyphunky.supabase.project`, `.auth`, `.migrations`, `.credentials` | Ensure hosted Projects, configure Auth, apply SQL migrations, and retrieve Project URL/API keys through the CLI. |
 | `madebyphunky.application` | `madebyphunky.application.local_env`, `playbooks/setup.yml` | Thin Application composer Collection; phased GitHub/Vercel/Supabase setup playbook and gitignored local `.env.local` writing. |
+| `madebyphunky.kamal` | `madebyphunky.kamal.setup` | Prepare Docker on existing VPS hosts through native Kamal bootstrap; CI owns deployments. |
 | `madebyphunky.nodejs` | `madebyphunky.nodejs.setup` | Ensure a compatible Node.js runtime, npm, and npx are available. |
 
 ## Install

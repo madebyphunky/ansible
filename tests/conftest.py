@@ -22,6 +22,7 @@ def installed(tmp_path_factory):
         "spaceship",
         "vercel",
         "supabase",
+        "kamal",
         "application",
     ):
         subprocess.run(

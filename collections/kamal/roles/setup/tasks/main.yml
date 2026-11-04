@@ -1,0 +1,10 @@
+---
+- name: Prepare existing hosts through Kamal
+  madebyphunky.kamal.server_bootstrap:
+    workdir: "{{ kamal_workdir }}"
+    config_file: "{{ kamal_config_file | default(omit) }}"
+    config: "{{ kamal_config | default(omit) }}"
+    executable: "{{ kamal_executable }}"
+    destination: "{{ kamal_destination }}"
+    environment: "{{ kamal_environment }}"
+  register: kamal_setup_result

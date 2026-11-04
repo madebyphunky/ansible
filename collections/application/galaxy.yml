@@ -1,15 +1,18 @@
 ---
 namespace: madebyphunky
 name: application
-version: 0.1.0
+version: 0.2.0
 readme: README.md
 authors: [madebyphunky]
-description: Thin Application composition across GitHub, Vercel, and Supabase.
+description: Thin Application composition for hosted services and Kamal server preparation.
 license: [MIT]
 tags: [application, composition]
 repository: https://github.com/madebyphunky/ansible
 issues: https://github.com/madebyphunky/ansible/issues
 dependencies:
+  madebyphunky.kamal: ">=0.1.0"
+  madebyphunky.gandi: ">=0.2.0"
+  madebyphunky.spaceship: ">=0.1.0"
   madebyphunky.vercel: ">=0.3.0"
   madebyphunky.supabase: ">=0.2.0"
 build_ignore: [.cache, .ansible, '*.tar.gz']
