@@ -1,0 +1,107 @@
+---
+- name: Reset the invocation result
+  ansible.builtin.set_fact:
+    hetzner_server_result: {}
+
+- name: Validate explicit creation inputs
+  ansible.builtin.assert:
+    that:
+      - hetzner_server_id is not defined
+      - hetzner_server_name is match('^[a-zA-Z0-9](?:[a-zA-Z0-9.-]{0,61}[a-zA-Z0-9])?$')
+      - hetzner_server_image | trim | length > 0
+      - hetzner_server_type | trim | length > 0
+      - hetzner_server_location | trim | length > 0
+      - hetzner_server_ssh_keys | length > 0
+      - hetzner_server_firewall is not defined or hetzner_server_firewall | trim | length > 0
+    fail_msg: Supply explicit name, image, type, location and existing SSH keys; server ID adoption is unsupported.
+
+- name: Validate existing SSH key references
+  ansible.builtin.assert:
+    that:
+      - item | trim | length > 0
+    fail_msg: SSH key references must be nonempty existing names or IDs.
+  loop: "{{ hetzner_server_ssh_keys }}"
+
+- name: Validate credential
+  ansible.builtin.assert:
+    that:
+      - _hetzner_token | trim | length > 0
+  vars:
+    _hetzner_token: "{{ hetzner_server_api_token | default(lookup('ansible.builtin.env', 'HCLOUD_TOKEN')) }}"
+  no_log: true
+
+- name: Inspect and create the server
+  vars:
+    _hetzner_token: "{{ hetzner_server_api_token | default(lookup('ansible.builtin.env', 'HCLOUD_TOKEN')) }}"
+  block:
+    - name: Find a name collision without mutation
+      hetzner.hcloud.server_info:
+        api_token: "{{ _hetzner_token }}"
+        name: "{{ hetzner_server_name }}"
+      register: _hetzner_existing
+      no_log: true
+
+    - name: Reject existing servers
+      ansible.builtin.assert:
+        that:
+          - _hetzner_existing.hcloud_server_info | length == 0
+        fail_msg: A server with this name already exists; preserve its ID. Adoption is unsupported.
+
+    - name: Create and start one server
+      hetzner.hcloud.server:
+        api_token: "{{ _hetzner_token }}"
+        name: "{{ hetzner_server_name }}"
+        image: "{{ hetzner_server_image }}"
+        server_type: "{{ hetzner_server_type }}"
+        location: "{{ hetzner_server_location }}"
+        ssh_keys: "{{ hetzner_server_ssh_keys }}"
+        firewalls: "{{ [hetzner_server_firewall] if hetzner_server_firewall is defined else omit }}"
+        enable_ipv4: "{{ hetzner_server_enable_ipv4 }}"
+        enable_ipv6: "{{ hetzner_server_enable_ipv6 }}"
+        state: started
+      register: _hetzner_created
+      no_log: true
+
+    - name: Return only stable identity and public addresses
+      ansible.builtin.set_fact:
+        hetzner_server_result:
+          id: "{{ _hetzner_created.hcloud_server.id }}"
+          ipv4: "{{ _hetzner_created.hcloud_server.ipv4_address }}"
+          ipv6: "{{ _hetzner_created.hcloud_server.ipv6 }}"
+          status: "{{ _hetzner_created.hcloud_server.status }}"
+      when: not ansible_check_mode
+
+    - name: Require the provider to report running
+      ansible.builtin.assert:
+        that:
+          - hetzner_server_result.status == 'running'
+      when: not ansible_check_mode
+
+  rescue:
+    - name: Preserve identity returned by a failed provider operation
+      ansible.builtin.set_fact:
+        hetzner_server_result:
+          id: "{{ _hetzner_created.hcloud_server.id }}"
+      when: _hetzner_created.hcloud_server.id is defined
+
+    # The official module can fail after creation without returning a server object.
+    - name: Recover identity by exact name without changing resources
+      hetzner.hcloud.server_info:
+        api_token: "{{ _hetzner_token }}"
+        name: "{{ hetzner_server_name }}"
+      register: _hetzner_recovery
+      no_log: true
+      failed_when: false
+
+    - name: Preserve recovered identity
+      ansible.builtin.set_fact:
+        hetzner_server_result:
+          id: "{{ _hetzner_recovery.hcloud_server_info[0].id }}"
+      when: _hetzner_recovery.hcloud_server_info | default([]) | length == 1
+
+    - name: Report failure without provider messages or credentials
+      ansible.builtin.fail:
+        msg: >-
+          Hetzner server creation failed or name is already in use. No resources were deleted.
+          Known identity: {{ hetzner_server_result | to_json }}.
+          Find the exact name in Hetzner Cloud and preserve its ID before any recovery; do not retry blindly.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add `madebyphunky.hetzner.server` for creation-only Hetzner Cloud provisioning (#25).
+
 - Add the Spaceship DNS Collection and Role with Gandi-compatible record-set
   declarations, protected provider records, check mode, and DNS string translation.
 

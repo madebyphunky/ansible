@@ -17,6 +17,7 @@ ORDER = (
     "vercel",
     "supabase",
     "kamal",
+    "hetzner",
     "application",
 )
 

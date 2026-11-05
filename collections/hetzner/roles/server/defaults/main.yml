@@ -1,0 +1,3 @@
+---
+hetzner_server_enable_ipv4: true
+hetzner_server_enable_ipv6: true

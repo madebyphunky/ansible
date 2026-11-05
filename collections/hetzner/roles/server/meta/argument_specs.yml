@@ -1,0 +1,42 @@
+---
+argument_specs:
+  main:
+    short_description: Create one new Hetzner Cloud server without adoption.
+    options:
+      hetzner_server_api_token:
+        type: str
+        no_log: true
+        description: Explicit token, otherwise controller HCLOUD_TOKEN.
+      hetzner_server_name:
+        type: str
+        required: true
+        description: Unique new server name.
+      hetzner_server_image:
+        type: str
+        required: true
+        description: Existing image name or ID.
+      hetzner_server_type:
+        type: str
+        required: true
+        description: Explicit server type name.
+      hetzner_server_location:
+        type: str
+        required: true
+        description: Explicit location name.
+      hetzner_server_ssh_keys:
+        type: list
+        elements: str
+        required: true
+        description: Nonempty list of existing SSH key names or IDs.
+      hetzner_server_firewall:
+        type: str
+        description: Optional existing firewall name or ID.
+      hetzner_server_enable_ipv4:
+        type: bool
+        description: Enable public IPv4 (charged separately), defaults to true.
+      hetzner_server_enable_ipv6:
+        type: bool
+        description: Enable public IPv6, defaults to true.
+      hetzner_server_id:
+        type: str
+        description: Unsupported in this creation-only slice; any supplied value is rejected.
