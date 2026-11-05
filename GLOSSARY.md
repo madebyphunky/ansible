@@ -59,3 +59,15 @@ _Avoid_: Project, team (when referring to the Supabase ownership boundary)
 **Project reference**:
 Supabase's stable identifier for a hosted Supabase Project, distinct from its display name.
 _Avoid_: project name (when selecting an exact existing Supabase Project)
+
+**Dokku host**:
+An existing server with Dokku already installed, reached over SSH as the `dokku` user.
+_Avoid_: VPS provisioning, Kamal host
+
+**Dokku App**:
+One explicitly named application on a Dokku host. It can exist before any release. Staging and production are separate Dokku Apps.
+_Avoid_: Deployment, environment, Kamal service
+
+**Release**:
+A published version of an Application's source on a Dokku App. The consuming Application's CI owns every Release, including the first.
+_Avoid_: Dokku App, Deployment, Collection version

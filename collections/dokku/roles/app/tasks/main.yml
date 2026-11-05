@@ -1,0 +1,11 @@
+---
+- name: Create or reuse one Dokku App
+  madebyphunky.dokku.app:
+    host: "{{ dokku_host }}"
+    app: "{{ dokku_app }}"
+    port: "{{ dokku_ssh_port | default(omit) }}"
+    private_key: "{{ dokku_ssh_private_key | default(omit) }}"
+    known_hosts: "{{ dokku_ssh_known_hosts | default(omit) }}"
+    ssh_config: "{{ dokku_ssh_config | default(omit) }}"
+    executable: "{{ dokku_ssh_executable }}"
+  register: dokku_app_result

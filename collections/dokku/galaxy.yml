@@ -1,0 +1,13 @@
+---
+namespace: madebyphunky
+name: dokku
+version: 0.1.0
+readme: README.md
+authors: [madebyphunky]
+description: Create or reuse one explicitly named Dokku App over SSH.
+license: [MIT]
+tags: [infrastructure, application, dokku]
+repository: https://github.com/madebyphunky/ansible
+issues: https://github.com/madebyphunky/ansible/issues
+dependencies: {}
+build_ignore: [.cache, .ansible, '*.tar.gz']
