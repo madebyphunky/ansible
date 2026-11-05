@@ -1,0 +1,28 @@
+---
+argument_specs:
+  main:
+    short_description: Create or reuse one explicitly named Dokku App over SSH.
+    options:
+      dokku_host:
+        type: str
+        required: true
+        description: Hostname or IPv4 address of an existing Dokku host.
+      dokku_app:
+        type: str
+        required: true
+        description: Explicit Dokku App name. Staging and production are separate names supplied by the caller.
+      dokku_ssh_port:
+        type: int
+        description: Caller-provided SSH port. Defaults to 22.
+      dokku_ssh_private_key:
+        type: path
+        description: Existing private key path. The Role does not register or generate keys.
+      dokku_ssh_known_hosts:
+        type: path
+        description: Caller-provided known hosts file used for host verification.
+      dokku_ssh_config:
+        type: path
+        description: Caller-provided OpenSSH config file, passed as -F.
+      dokku_ssh_executable:
+        type: str
+        description: Existing SSH executable or wrapper. Defaults to ssh.

@@ -14,6 +14,7 @@ root contains shared tooling and documentation.
 | `madebyphunky.application` | `madebyphunky.application.local_env`, `playbooks/setup.yml` | Thin Application composer Collection; phased GitHub/Vercel/Supabase setup playbook and gitignored local `.env.local` writing. |
 | `madebyphunky.hetzner` | `madebyphunky.hetzner.server` | Create one new Hetzner Cloud server; see [inputs and recovery](collections/hetzner/README.md). |
 | `madebyphunky.kamal` | `madebyphunky.kamal.setup` | Prepare Docker on existing VPS hosts through native Kamal bootstrap; CI owns deployments. |
+| `madebyphunky.dokku` | `madebyphunky.dokku.app` | Create or reuse one explicitly named Dokku App over SSH; CI owns releases. Dokku and Kamal are never used together. |
 | `madebyphunky.nodejs` | `madebyphunky.nodejs.setup` | Ensure a compatible Node.js runtime, npm, and npx are available. |
 
 ## Install

@@ -1,0 +1,3 @@
+---
+dokku_ssh_port: 22
+dokku_ssh_executable: ssh

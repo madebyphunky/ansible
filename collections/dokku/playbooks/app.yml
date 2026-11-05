@@ -1,0 +1,7 @@
+---
+- name: Create or reuse one Dokku App
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - madebyphunky.dokku.app
