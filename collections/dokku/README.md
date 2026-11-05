@@ -15,11 +15,12 @@ verification yourself. This Role does not register keys, provision CI
 credentials, install Dokku, or provision a VPS.
 
 The `version`, `apps:exists`, and `apps:create` command contract was read from
-Dokku 0.34.0 and reference release 0.38.34. `dokku version` must print
+Dokku 0.34.0 and tested release 0.38.34. `dokku version` must print
 `dokku version X.Y.Z`. A missing App makes `apps:exists` exit 20. Versions
 outside 0.34.0 through 0.38.34, and unrecognized version output, fail before
-any mutation. The Role never upgrades the host. This was not executed on a
-live Dokku host. Live acceptance is **pending**.
+any mutation. The Role never upgrades the host. Live SSH acceptance passed against official
+Dokku containers for both endpoints on 2026-11-05; see
+[verification evidence](../../docs/dokku-verification.md).
 
 Install from this repository with `python scripts/collection_tools.py install`.
 The Collection has no dependency on another Collection.
@@ -104,15 +105,11 @@ and does not mean the App is running or publicly reachable.
 
 Credential-free contracts build and install the Collection and run the public
 Role through an SSH/Dokku double. They cover validation before any connection,
-creation, reuse, unsupported versions, SSH failure, and check mode. No live
-Dokku host has been changed by this Collection.
-
-Before live acceptance is complete, run the installed Role against a disposable
-Dokku 0.38.34 host: predict a missing App in check mode, create it, reuse it
-without changes, and inspect it again in check mode. Record the host version
-and results. Repeat against 0.34.0 to verify the advertised lower bound.
-These checks remain pending; the source-read command contract and SSH double
-are not live compatibility evidence.
+creation, reuse, unsupported versions, SSH failure, and check mode. Live SSH acceptance additionally exercised the installed Role against real
+Dokku 0.38.34 and 0.34.0 containers: missing-App check mode, creation, unchanged
+reuse, and existing-App check mode. This verifies the App command contract,
+not source deployment, plugins, or a production host configuration. See the
+[recorded results and rerun procedure](../../docs/dokku-verification.md).
 
 References: [application management](https://dokku.com/docs/deployment/application-management/),
 [remote commands](https://dokku.com/docs/deployment/remote-commands/).
