@@ -1,0 +1,25 @@
+---
+- name: Optionally configure DNS and prepare an existing VPS for Kamal
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Validate optional DNS provider before mutation
+      ansible.builtin.assert:
+        that:
+          - application_kamal_dns_provider | default('') in ['', 'gandi', 'spaceship']
+        fail_msg: application_kamal_dns_provider must be empty, gandi, or spaceship.
+
+    - name: Converge explicitly owned Gandi record sets
+      ansible.builtin.include_role:
+        name: madebyphunky.gandi.livedns
+      when: application_kamal_dns_provider | default('') == 'gandi'
+
+    - name: Converge explicitly owned Spaceship record sets
+      ansible.builtin.include_role:
+        name: madebyphunky.spaceship.dns
+      when: application_kamal_dns_provider | default('') == 'spaceship'
+
+    - name: Prepare Docker through Kamal
+      ansible.builtin.include_role:
+        name: madebyphunky.kamal.setup

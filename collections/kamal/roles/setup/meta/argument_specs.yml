@@ -1,0 +1,24 @@
+---
+argument_specs:
+  main:
+    short_description: Prepare Docker on existing Kamal hosts without deploying Applications.
+    options:
+      kamal_workdir:
+        type: path
+        required: true
+        description: Controller checkout directory used by Kamal.
+      kamal_config_file:
+        type: path
+        description: Native Kamal config path, relative to workdir or absolute; exclusive with kamal_config.
+      kamal_config:
+        type: dict
+        description: Native Kamal configuration values; exclusive with kamal_config_file.
+      kamal_executable:
+        type: str
+        description: Existing controller executable or wrapper; defaults to kamal.
+      kamal_destination:
+        type: str
+        description: Optional native destination selector, passed through unchanged.
+      kamal_environment:
+        type: dict
+        description: Process environment overrides, redacted; defaults to an empty mapping.

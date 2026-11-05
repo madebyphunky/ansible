@@ -9,7 +9,16 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-ORDER = ("nodejs", "github", "gandi", "spaceship", "vercel", "supabase", "application")
+ORDER = (
+    "nodejs",
+    "github",
+    "gandi",
+    "spaceship",
+    "vercel",
+    "supabase",
+    "kamal",
+    "application",
+)
 
 
 def main():
