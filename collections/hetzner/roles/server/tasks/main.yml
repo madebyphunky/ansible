@@ -65,11 +65,12 @@
 
     - name: Return only stable identity and public addresses
       ansible.builtin.set_fact:
-        hetzner_server_result:
-          id: "{{ _hetzner_created.hcloud_server.id }}"
-          ipv4: "{{ _hetzner_created.hcloud_server.ipv4_address }}"
-          ipv6: "{{ _hetzner_created.hcloud_server.ipv6 }}"
-          status: "{{ _hetzner_created.hcloud_server.status }}"
+        # A single dictionary expression preserves null addresses on Core 2.18 too.
+        hetzner_server_result: >-
+          {{ {'id': _hetzner_created.hcloud_server.id,
+              'ipv4': _hetzner_created.hcloud_server.ipv4_address,
+              'ipv6': _hetzner_created.hcloud_server.ipv6,
+              'status': _hetzner_created.hcloud_server.status} }}
       when: not ansible_check_mode
 
     - name: Require the provider to report running
