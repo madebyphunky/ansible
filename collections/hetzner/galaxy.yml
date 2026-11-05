@@ -1,0 +1,14 @@
+---
+namespace: madebyphunky
+name: hetzner
+version: 0.1.0
+readme: README.md
+authors: [madebyphunky]
+description: Create one explicitly configured Hetzner Cloud server.
+license: [MIT]
+tags: [cloud, infrastructure, hetzner]
+repository: https://github.com/madebyphunky/ansible
+issues: https://github.com/madebyphunky/ansible/issues
+dependencies:
+  hetzner.hcloud: '==6.12.0'
+build_ignore: [.cache, .ansible, '*.tar.gz']

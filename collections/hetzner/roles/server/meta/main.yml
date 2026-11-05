@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: madebyphunky
+  description: Create one new Hetzner Cloud server.
+  license: MIT
+  min_ansible_version: '2.18'
+dependencies: []
