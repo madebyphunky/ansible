@@ -304,3 +304,28 @@ def test_example_playbook_runs_the_public_role(dokku, installed, tmp_path):
         ["apps:exists", "billing"],
         ["apps:create", "billing"],
     ]
+
+
+@pytest.mark.parametrize(
+    "port_override,expected_port", [(None, "2222"), (2200, "2200")]
+)
+def test_ssh_config_port_is_used_unless_explicitly_overridden(
+    dokku, tmp_path, port_override, expected_port
+):
+    run, state = dokku
+    config = tmp_path / "ssh_config"
+    config.write_text("Host *\n    Port 2222\n")
+    overrides = {"dokku_ssh_config": str(config)}
+    if port_override is not None:
+        overrides["dokku_ssh_port"] = port_override
+    result = run(overrides)
+    assert result.returncode == 0, result.stdout
+    call = data(state)["calls"][0]
+    destination = next(i for i, arg in enumerate(call) if arg.startswith("dokku@"))
+    resolved = subprocess.run(
+        ["ssh", "-G", *call[: destination + 1]],
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert f"port {expected_port}" in resolved.stdout.splitlines()

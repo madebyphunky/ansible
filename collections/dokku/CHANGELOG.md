@@ -4,3 +4,4 @@
 
 - Add a controller-side Role that creates or reuses one explicitly named Dokku
   App over SSH, after checking the server version, without deploying source.
+- Preserve caller SSH-configured ports unless an explicit port override is supplied.

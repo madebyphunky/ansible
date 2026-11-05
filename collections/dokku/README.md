@@ -15,7 +15,7 @@ verification yourself. This Role does not register keys, provision CI
 credentials, install Dokku, or provision a VPS.
 
 The `version`, `apps:exists`, and `apps:create` command contract was read from
-Dokku 0.34.0 and the tested release 0.38.34. `dokku version` must print
+Dokku 0.34.0 and reference release 0.38.34. `dokku version` must print
 `dokku version X.Y.Z`. A missing App makes `apps:exists` exit 20. Versions
 outside 0.34.0 through 0.38.34, and unrecognized version output, fail before
 any mutation. The Role never upgrades the host. This was not executed on a
@@ -55,7 +55,7 @@ checkout, run `collections/dokku/playbooks/app.yml` the same way.
 | --- | --- |
 | `dokku_host` | Required hostname or IPv4 address of an existing Dokku host. |
 | `dokku_app` | Required explicit Dokku App name. Lowercase alphanumeric first character; then lowercase alphanumerics, dots, and hyphens. |
-| `dokku_ssh_port` | SSH port, default `22`. |
+| `dokku_ssh_port` | Optional SSH port override; otherwise use SSH configuration (OpenSSH defaults to `22`). |
 | `dokku_ssh_private_key` | Optional absolute path to an existing private key. Not created or registered. |
 | `dokku_ssh_known_hosts` | Optional absolute path. When set, it is the only known-hosts file. |
 | `dokku_ssh_config` | Optional absolute path, passed as `ssh -F`. Replaces the default SSH config. |
@@ -106,6 +106,13 @@ Credential-free contracts build and install the Collection and run the public
 Role through an SSH/Dokku double. They cover validation before any connection,
 creation, reuse, unsupported versions, SSH failure, and check mode. No live
 Dokku host has been changed by this Collection.
+
+Before live acceptance is complete, run the installed Role against a disposable
+Dokku 0.38.34 host: predict a missing App in check mode, create it, reuse it
+without changes, and inspect it again in check mode. Record the host version
+and results. Repeat against 0.34.0 to verify the advertised lower bound.
+These checks remain pending; the source-read command contract and SSH double
+are not live compatibility evidence.
 
 References: [application management](https://dokku.com/docs/deployment/application-management/),
 [remote commands](https://dokku.com/docs/deployment/remote-commands/).

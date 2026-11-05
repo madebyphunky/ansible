@@ -13,7 +13,7 @@ argument_specs:
         description: Explicit Dokku App name. Staging and production are separate names supplied by the caller.
       dokku_ssh_port:
         type: int
-        description: Caller-provided SSH port. Defaults to 22.
+        description: Optional SSH port override. Otherwise use the caller SSH configuration.
       dokku_ssh_private_key:
         type: path
         description: Existing private key path. The Role does not register or generate keys.

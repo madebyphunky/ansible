@@ -28,8 +28,7 @@ options:
     description: Explicit Dokku App name.
   port:
     type: int
-    default: 22
-    description: SSH port.
+    description: Optional SSH port override. Otherwise use the caller SSH configuration.
   private_key:
     type: path
     description: Existing private key path.
@@ -84,9 +83,10 @@ HOST_NAME = re.compile(
     r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$"
 )
 VERSION_LINE = re.compile(r"^dokku version (\d+\.\d+\.\d+)$")
-# Inclusive command contract checked against Dokku 0.34.0 and tested release 0.38.34.
+# Command contract read from Dokku 0.34.0 and reference release 0.38.34.
+# Live acceptance is pending.
 MINIMUM_VERSION = (0, 34, 0)
-TESTED_VERSION = (0, 38, 34)
+MAXIMUM_VERSION = (0, 38, 34)
 # Dokku exits 20 when apps:exists names a missing App. Other statuses are failures.
 MISSING_APP = 20
 
@@ -108,7 +108,9 @@ def validate(params):
             "dokku_app must begin with a lowercase alphanumeric character and may "
             "only contain lowercase alphanumerics, dots, and hyphens."
         )
-    if not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535:
+    if port is not None and (
+        not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535
+    ):
         raise DokkuError("dokku_ssh_port must be an integer from 1 to 65535.")
     for label, path in (
         ("dokku_ssh_private_key", params["private_key"]),
@@ -134,11 +136,11 @@ def ssh_base(module, params):
     # cannot wait for a prompt. Other caller SSH settings stay in that config.
     command = [
         module.get_bin_path(params["executable"], required=True),
-        "-p",
-        str(params["port"]),
         "-o",
         "BatchMode=yes",
     ]
+    if params["port"] is not None:
+        command += ["-p", str(params["port"])]
     if params["private_key"]:
         command += ["-i", params["private_key"], "-o", "IdentitiesOnly=yes"]
     if params["known_hosts"]:
@@ -184,7 +186,7 @@ def supported_version(stdout):
     if not match:
         return None
     parts = tuple(int(part) for part in match.group(1).split("."))
-    if parts < MINIMUM_VERSION or parts > TESTED_VERSION:
+    if parts < MINIMUM_VERSION or parts > MAXIMUM_VERSION:
         return None
     return match.group(1)
 
@@ -231,7 +233,7 @@ def ensure(module):
     if version is None:
         raise DokkuError(
             "Dokku version is unsupported or unrecognized. Supported range is 0.34.0 "
-            "through 0.38.34 (tested release 0.38.34). The host was not upgraded or changed."
+            "through 0.38.34 (reference release 0.38.34). The host was not upgraded or changed."
         )
     exists_rc, _exists_out = remote(module, base, ["apps:exists", app])
     if exists_rc not in (0, MISSING_APP):
@@ -254,7 +256,7 @@ def main():
         argument_spec={
             "host": {"type": "str", "required": True},
             "app": {"type": "str", "required": True},
-            "port": {"type": "int", "default": 22},
+            "port": {"type": "int"},
             "private_key": {"type": "path", "no_log": True},
             "known_hosts": {"type": "path"},
             "ssh_config": {"type": "path"},
