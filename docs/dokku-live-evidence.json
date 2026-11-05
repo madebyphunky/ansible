@@ -1,0 +1,127 @@
+{
+  "date": "2026-11-05",
+  "tested_commit": "8725720ace69b04c6b7513933b960cc8ca1140d8",
+  "runtime": "Docker Desktop 29.8.2; Ansible Core 2.19; Python 3.12; macOS controller",
+  "runs": [
+    {
+      "version": "0.38.34",
+      "image": [
+        "dokku/dokku@sha256:70c09c7f5badff1b0a7077fe899db269255a22aed08571f4da605bfcb50fd8a8"
+      ],
+      "checks": [
+        {
+          "phase": "predict",
+          "result": {
+            "changed": true,
+            "host": "live-dokku",
+            "app": "acceptance-29",
+            "version": "0.38.34",
+            "actions": [
+              "create"
+            ],
+            "exists": false,
+            "planned": true
+          }
+        },
+        {
+          "phase": "create",
+          "result": {
+            "changed": true,
+            "host": "live-dokku",
+            "app": "acceptance-29",
+            "version": "0.38.34",
+            "actions": [
+              "create"
+            ],
+            "exists": true,
+            "planned": false
+          }
+        },
+        {
+          "phase": "reuse",
+          "result": {
+            "changed": false,
+            "host": "live-dokku",
+            "app": "acceptance-29",
+            "version": "0.38.34",
+            "actions": [],
+            "exists": true,
+            "planned": false
+          }
+        },
+        {
+          "phase": "check-existing",
+          "result": {
+            "changed": false,
+            "host": "live-dokku",
+            "app": "acceptance-29",
+            "version": "0.38.34",
+            "actions": [],
+            "exists": true,
+            "planned": false
+          }
+        }
+      ]
+    },
+    {
+      "version": "0.34.0",
+      "image": [
+        "dokku/dokku@sha256:07ccb3602ee504613b578c73cdcf7f383a4721934b6e15ffe03273c6fe5c86b2"
+      ],
+      "checks": [
+        {
+          "phase": "predict",
+          "result": {
+            "changed": true,
+            "host": "live-dokku",
+            "app": "acceptance-29",
+            "version": "0.34.0",
+            "actions": [
+              "create"
+            ],
+            "exists": false,
+            "planned": true
+          }
+        },
+        {
+          "phase": "create",
+          "result": {
+            "changed": true,
+            "host": "live-dokku",
+            "app": "acceptance-29",
+            "version": "0.34.0",
+            "actions": [
+              "create"
+            ],
+            "exists": true,
+            "planned": false
+          }
+        },
+        {
+          "phase": "reuse",
+          "result": {
+            "changed": false,
+            "host": "live-dokku",
+            "app": "acceptance-29",
+            "version": "0.34.0",
+            "actions": [],
+            "exists": true,
+            "planned": false
+          }
+        },
+        {
+          "phase": "check-existing",
+          "result": {
+            "changed": false,
+            "host": "live-dokku",
+            "app": "acceptance-29",
+            "version": "0.34.0",
+            "actions": [],
+            "exists": true,
+            "planned": false
+          }
+        }
+      ]
+    }
+  ]
+}

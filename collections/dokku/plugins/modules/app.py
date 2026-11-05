@@ -83,8 +83,8 @@ HOST_NAME = re.compile(
     r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$"
 )
 VERSION_LINE = re.compile(r"^dokku version (\d+\.\d+\.\d+)$")
-# Command contract read from Dokku 0.34.0 and reference release 0.38.34.
-# Live acceptance is pending.
+# Live SSH App command acceptance passed on Dokku 0.34.0 and 0.38.34.
+# See docs/dokku-verification.md for the tested scope and evidence.
 MINIMUM_VERSION = (0, 34, 0)
 MAXIMUM_VERSION = (0, 38, 34)
 # Dokku exits 20 when apps:exists names a missing App. Other statuses are failures.
