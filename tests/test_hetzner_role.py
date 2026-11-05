@@ -170,3 +170,34 @@ def test_environment_fallback_and_disabled_public_addresses(hetzner):
         ],
     )
     assert result.returncode == 0, result.stdout
+
+
+def test_repeated_invocation_does_not_report_previous_server_id(hetzner):
+    run, _, _ = hetzner
+    result = run(
+        tasks_after=[
+            {
+                "block": [
+                    {
+                        "ansible.builtin.include_role": {
+                            "name": "madebyphunky.hetzner.server",
+                            "apply": {
+                                "environment": {
+                                    "HETZNER_TEST_SCENARIO": "lookup_failure"
+                                }
+                            },
+                        },
+                        "vars": {"hetzner_server_name": "different-server"},
+                    }
+                ],
+                "rescue": [
+                    {
+                        "ansible.builtin.assert": {
+                            "that": ["hetzner_server_result == {}"]
+                        }
+                    }
+                ],
+            }
+        ]
+    )
+    assert result.returncode == 0, result.stdout

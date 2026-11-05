@@ -2,6 +2,7 @@
 - name: Reset the invocation result
   ansible.builtin.set_fact:
     hetzner_server_result: {}
+    _hetzner_created: {}
 
 - name: Validate explicit creation inputs
   ansible.builtin.assert:
